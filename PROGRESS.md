@@ -2,7 +2,7 @@
 
 ## Milestone plan
 
-Prompts 01–06 were supplied. Earlier sections are historical checkpoints. Milestone 06 implements the local backend and Responses integration with mocked automated evidence; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–07 were supplied. Earlier sections are historical checkpoints. Milestone 07 implements deterministic whole-turn context retention on the existing backend integration; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
@@ -10,7 +10,7 @@ Prompts 01–06 were supplied. Earlier sections are historical checkpoints. Mile
 4. Floating island UI — implemented; partial verification status recorded below.
 5. Message composer and context management — implemented; verification recorded below.
 6. Real AI provider integration — implemented; Partial pending configured live OpenAI/Chrome verification below.
-7. Provider/conversation refinement — not started (provisional plan).
+7. Follow-up conversations and context optimization — implemented; automated evidence and remaining manual checks below.
 8. Theme, accessibility, and interaction refinement — not started.
 9. Security, regression, and browser compatibility verification — not started.
 10. Release packaging and distribution documentation — not started.
@@ -222,3 +222,32 @@ Dependencies are locked independently in server/package-lock.json (Fastify 5.12.
 Known limits: trusted local development only; Origin/CORS is not authentication. Extension IDs require explicit environment updates. Chrome host patterns cannot limit loopback permission by port, but code fixes port 8787/path. API usage can cost money. store:false does not guarantee zero provider retention. History is bounded at 21 messages/60,000 UTF-16 units, answers at 2,048 tokens/16,000 units, and generation at 25 seconds (worker 28/client 30). Incomplete output fails safely. No streaming, persistence, public hosting, accounts or automatic retries. ChatGPT semantic DOM/native shortcut compatibility remains a manual concern.
 
 Remaining evidence: follow README's live 15-step checklist with a locally configured key and available Chrome; confirm real output/follow-up context, cancellation, unavailable backend errors and unchanged original conversation. No remaining milestone implementation is authorized by this checkpoint.
+
+## Milestone 07 — follow-up conversations and context optimization
+
+Status: **Partial** — implementation, automated tests, production builds and documentation are verified. Live Chrome/API scenarios A–E remain unperformed; no claim of real model conversational quality or native extension delivery is made. Milestone 08 has not begun.
+
+Implemented a pure context-manager at the existing adapter boundary. It keeps the original selected reference and current question, retains the newest complete user/real-assistant pairs under both configured limits (20 prior messages / 30,000 prior-history characters), and strips metadata, failed/pending/mock turns and unmatched messages. Older pairs are omitted only from requests; the full temporary UI history remains intact. At the first pair that cannot fit, retention stops rather than splitting a turn or backfilling disconnected older history. Selected text and current question have independent existing 10,000/8,000-unit limits. These are UTF-16 character approximations, not token guarantees. No summarization or auxiliary provider requests were added.
+
+The manager records pending/failed/complete message states, preserves retry IDs, and explicitly checks conversation ownership alongside request tickets and abort state. Failed user turns are replaced on retry, with no fake assistant response or error text in request history. Shared runtime validation now enforces alternating whole history turns and the same character budget in both the worker and backend. Immutable local snapshots carry status; wire payloads remain only context.text and role/content messages.
+
+Selection validation, same-context focus/history retention, new-context disposal, viewport/UI behavior, scroll preservation, backend/model configuration and separate trusted instructions/untrusted reference roles are reused. Temporary data stays in memory; close clears context/messages/draft/retry/pending state. No persistence, original-conversation collection or original-composer submission was introduced.
+
+Actual verification:
+
+| Check                  | Result                                                                                                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| npm run typecheck      | Passed; includes separate backend typecheck                                                                                         |
+| npm run lint           | Passed; includes extension, backend and tests                                                                                       |
+| npm run build          | Passed; production extension and compiled backend                                                                                   |
+| npm run test           | 196 tests passed across 15 files; all provider calls mocked                                                                         |
+| npm run format:check   | Passed                                                                                                                              |
+| Request inspection     | Pure wire-builder tests verify original reference once, ordered complete pairs, current question once, exact bounds and no metadata |
+| Backend validation     | Over-budget history and split roles return 400 without invoking the SDK                                                             |
+| Manual Chrome/live API | Not performed; prior environment lacked Chromium and no backend key is configured                                                   |
+
+Fourteen additional tests cover first/multiple follow-ups; exact 20-message and 30,000-character boundaries; selected/current text at maximum lengths; whole-turn pruning and chronological retention; failed/pending/mock/orphan exclusion; deterministic immutable snapshots; duplicate IDs; injection-like text staying in a user reference; full UI-store history and stable IDs after 14 turns; retry completion state and history; no browser persistence API writes; and backend rejection before provider generation. Existing tests continue covering same-selection preservation, replacement/close cleanup, late success/error rejection, abort propagation, respectful scrolling and unchanged original page. The existing socket cancellation test ran with loopback access outside the sandbox. No paid API calls or browser integration tests ran during this milestone.
+
+Files: added conversation/context-manager.ts and tests/context-manager.test.ts; updated conversation types/manager/request-builder/OpenAI adapter, shared schema/limits, adapter/backend tests and README/ARCHITECTURE/PROGRESS. No manifest, model, provider or dependency change was required.
+
+Known limits: older visible discussion can fall out of model context; counts approximate token usage. The application preserves roles and trusted instructions but cannot guarantee model immunity to arbitrary prompt injection. The local backend remains unauthenticated trusted development infrastructure, not public hosting. store:false does not promise zero provider retention; cancellation cannot undo already processed/billed provider work. Standard tests use mocks rather than validating live model answers. README contains exact manual scenarios A–E for normal/long follow-ups, replacement, failure/retry and close cancellation, each checking original-page preservation. Later milestones remain unstarted.

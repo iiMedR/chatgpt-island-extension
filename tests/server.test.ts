@@ -383,3 +383,30 @@ it('propagates a real loopback client disconnect to the SDK signal', async () =>
   }
   await vi.waitFor(() => expect(signal?.aborted).toBe(true));
 });
+
+it('rejects history over the new character budget or split turns before provider generation', async () => {
+  const { app, create } = setup();
+  const history = Array.from({ length: 4 }, (_, i) => ({
+    role: i % 2 ? 'assistant' : 'user',
+    content: 'x'.repeat(7500),
+  }));
+  for (const messages of [
+    [
+      ...history.map((m, i) => ({
+        ...m,
+        content: i === 0 ? m.content + 'x' : m.content,
+      })),
+      ...body.messages,
+    ],
+    [...body.messages, ...body.messages, ...body.messages],
+  ]) {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/chat',
+      headers,
+      payload: { context: body.context, messages },
+    });
+    expect(response.statusCode).toBe(400);
+  }
+  expect(create).not.toHaveBeenCalled();
+});

@@ -2,7 +2,7 @@
 
 Independent Chrome extension for exploring selected assistant text in a floating mini-chat. Not affiliated with OpenAI.
 
-Milestone 06 connects the island to the OpenAI Responses API through a local Node.js backend. **API usage may incur charges.** The API key belongs only in the backend environment. Never put it in extension code, browser storage, a build variable, Git, or a chat message.
+Milestone 07 improves follow-up context on the existing integration, which connects the island to the OpenAI Responses API through a local Node.js backend. **API usage may incur charges.** The API key belongs only in the backend environment. Never put it in extension code, browser storage, a build variable, Git, or a chat message.
 
 ## Install and configure
 
@@ -58,7 +58,7 @@ Highlight text inside one ChatGPT assistant response, allow the 80 ms selection 
 
 The island displays **Selected context** separately from your questions. Enter submits; Shift+Enter adds a newline; IME Enter does not submit mid-composition. Questions are trimmed and limited to 8,000 UTF-16 units. Blank or oversized drafts cannot be sent. Input grows for multiline content. While submitting, a subtle status appears and duplicate sends are blocked. A successful answer is labeled **Assistant**, clears the draft and refocuses the composer. Offline mock answers remain labeled **Development placeholder**.
 
-Follow-ups retain the original selected context and ordered island history. Requests send at most 21 recent messages and 60,000 total text units, dropping oldest turns when needed. Selected context is included once, separately. Model output is limited to 2,048 tokens and 16,000 text units; incomplete/empty output produces a safe error. Failed questions remain editable; Retry question replaces the failed unanswered turn rather than duplicating it.
+Follow-ups retain the original selected context and ordered island history. Requests retain up to 20 completed history messages (10 whole user/assistant turns), with a 30,000-character history budget, plus the current question and original selected text. Oldest complete turns are omitted from requests only; every message remains visible until the island closes. These configurable limits use UTF-16 text units, approximate token usage, and do not guarantee a token count. No AI summarization requests are made. Selected context is included once, separately. Model output is limited to 2,048 tokens and 16,000 text units; incomplete/empty output produces a safe error. Failed questions remain editable; Retry question replaces the failed unanswered turn rather than duplicating it.
 
 Drag the header or use its arrow keys. Resize from the bottom-right handle or its arrow keys. Expand/restore stays within the viewport; default dimensions are 460 × 520 with viewport-adjusted minimums. Light/dark host theme attributes are preferred, with system theme fallback. Messages scroll internally without forcing a reader who scrolled upward back to the bottom.
 
@@ -102,8 +102,18 @@ Only explicitly selected, validated assistant text (up to 10,000 UTF-16 units), 
 
 The official SDK exists only in `server/`. Credentials are loaded only there. Responses use separate trusted instructions, untrusted reference context, `stream:false` and `store:false`, with no server-side conversation IDs. [Stateless Responses requests](https://developers.openai.com/api/docs/guides/migrate-to-responses) do not guarantee zero provider retention; OpenAI data policies still apply. Shadow DOM isolates styles, not secrets from the host page.
 
-The server binds only 127.0.0.1, validates exact Origin/Host, restricts CORS, JSON shape and body size, rejects client model/credentials, and disables SDK retries and content logging. **CORS/Origin checks are not authentication.** This backend is for a trusted local machine and must not be exposed publicly. There are no accounts, subscriptions, public deployment, streaming, persistent history or Milestone 07 features.
+The server binds only 127.0.0.1, validates exact Origin/Host, restricts CORS, JSON shape and body size, rejects client model/credentials, and disables SDK retries and content logging. **CORS/Origin checks are not authentication.** This backend is for a trusted local machine and must not be exposed publicly. There are no accounts, subscriptions, public deployment, streaming, persistent history or Milestone 08 features.
 
 Manifest permissions are activeTab plus only `http://127.0.0.1/*` host access; Chrome match patterns cannot restrict that permission to one port, but runtime code uses the fixed port/path. Content injection remains limited to HTTPS chatgpt.com. No incognito access is enabled. Semantic ChatGPT DOM attributes remain a compatibility assumption; unknown layouts fail closed.
 
 Actual verification and pending browser/live API limitations are recorded in PROGRESS.md.
+
+## Milestone 07 follow-up checks
+
+Build/reload the production extension, configure the local backend as above, and refresh ChatGPT. These manual scenarios have not been executed in this session. Use non-sensitive test text; real requests may incur API costs. In every scenario confirm the original ChatGPT messages and composer remain unchanged.
+
+- **A — Follow-up:** Select a technical paragraph, press Alt+Shift+E, ask “Explain this simply.” and wait. Ask “Can you give me an example?” Verify the answer refers to the selected text and preceding island answer. Repeat the shortcut with the same selection: retain history/draft and focus the composer.
+- **B — Longer chat:** Ask at least 12 short follow-up questions. Verify visible chronological history is retained. In the extension service worker DevTools Network panel, inspect the localhost request body: context.text occurs once, messages contains at most 20 completed prior messages plus the current question, and prior-message content lengths total at most 30,000. Roles alternate user/assistant ending with the current user question. Test longer text to reach the character limit. The selected text and current question have separate 10,000/8,000 limits; older turns may be unavailable to the model even though still visible. Inspection is manual only; content is never logged by the extension/backend.
+- **C — New selection:** Start a chat, select different assistant text and trigger again. Verify the old history/draft/error is discarded and only new selected context enters the next request. Closing and reopening also starts fresh.
+- **D — Failure/retry:** Stop the backend, submit, verify an inline error and preserved editable question, restart the backend and retry. Verify one question bubble, one answer and no duplicated request history. Editing a failed draft replaces that unanswered question. No fake answer or error text is included in future context.
+- **E — Cancellation:** Submit, close while pending, then reopen with a new selection. Verify no old answer/error appears. Also change selection while pending. Cancellation cannot reverse provider processing already completed or guarantee that no API usage was charged.

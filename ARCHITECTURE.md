@@ -31,7 +31,7 @@ AbortController and request tickets invalidate work synchronously on disposal or
 ## Production data flow
 
 1. The request builder snapshots selected context and ordered island messages separately.
-2. openai-adapter strips URLs, timestamps, IDs and assistant mock messages. It retains at most 21 recent messages and 60,000 total UTF-16 text units, dropping oldest turns and leading orphan assistant messages. The current question and original selected reference remain.
+2. openai-adapter delegates to the pure context-manager wire builder, which strips URLs, timestamps, IDs and non-complete/mock turns. It retains at most 20 completed history messages and 30,000 history UTF-16 units, plus the current user question. The current question and original selected reference remain.
 3. A dedicated runtime Port sends one validated AI_REQUEST to the extension worker. One port per request provides disconnect-based cancellation, not a keepalive mechanism.
 4. ai-relay accepts only the same extension ID, supported ChatGPT sender URL and top frame. It validates exact message shape and payload, ignores repeat messages, and performs one fetch to the fixed http://127.0.0.1:8787/api/chat URL. Redirects, credentials and cache are disabled.
 5. Fastify validates Origin, Host, JSON content type, 256 KiB body limit and strict shared schema before generation.
@@ -54,10 +54,25 @@ Client deadline is 30 seconds, worker fetch deadline 28 seconds and backend gene
 
 Errors distinguish missing/invalid key, unsupported model, rate limit, insufficient credits, timeout, unavailable backend/provider, invalid payload and empty/incomplete answer. Raw SDK messages/stacks never reach the browser. Backend diagnostics contain only fixed error codes and HTTP statuses; SDK and HTTP request-content logging are disabled. Development shortcut diagnostics contain fixed labels only.
 
-Origin and Host checks, exact CORS, restricted JSON, limits, timeout and loopback binding reduce local exposure. They are **not authentication**: a local native client can forge headers. This is trusted local development, not a public production backend. No accounts, public deployment, streaming, persistence or Milestone 07 features are included.
+Origin and Host checks, exact CORS, restricted JSON, limits, timeout and loopback binding reduce local exposure. They are **not authentication**: a local native client can forge headers. This is trusted local development, not a public production backend. No accounts, public deployment, streaming, persistence or Milestone 08 features are included.
 
 ## Offline mode and verification
 
 Production initialization explicitly injects createOpenAIAdapter; isolated controller tests can inject a mock. --offline builds inject the mock and compile out relay registration. dist/build-info.json records openai or mock mode. Browser fixtures build and assert mock mode before sending questions, preventing accidental paid test calls. Restore production with npm run build afterward.
 
 Root typecheck/build cover both packages; root ESLint and Vitest cover server code/tests too. SDK calls are mocked, including a full manager→adapter→worker→Fastify→SDK fixture with follow-ups. A real ephemeral loopback disconnect test verifies SDK abort propagation without contacting OpenAI. Artifact tests scan for a synthetic server-key canary, real-key patterns and bundled provider SDK/endpoint. Native Chrome load/shortcut delivery and a configured real API answer remain separate manual verification requirements.
+
+## Milestone 07 context optimization
+
+context-manager.ts owns pure deterministic production request construction, independent of React and DOM. request-builder.ts still creates an immutable local snapshot, including message completion status. Context is a separate immutable object, never injected into the visible question/history. Metadata stays local and is removed at the wire boundary. The same extension/backend schema enforces the limits from shared/ai-contract.ts:
+
+- MAX_COMPLETED_HISTORY_MESSAGES = 20 (10 completed pairs).
+- MAX_HISTORY_CHARACTERS = 30,000; excludes selected reference/current question.
+- Original selected text <=10,000 and current question <=8,000; neither is truncated.
+- Up to 21 wire messages and 48,000 aggregate text units. Character counts approximate tokens, with no token guarantee.
+
+Algorithm: require a final user question and unique local message IDs; scan earlier messages in insertion order for adjacent complete user/assistant pairs. Absent status is treated as complete for compatibility. Exclude pending/failed users or assistants, mock-kind/known-placeholder answers, and orphan messages together with their unmatched questions. Starting at the newest eligible pair, retain whole pairs while both count and character budgets permit. Stop at the first pair that cannot fit rather than backfilling disconnected older discussion. Restore chronological order and append the current question exactly once. Strict schema validation rejects malformed lengths/roles/shape; the server independently requires alternating complete pairs followed by one user question and checks the history budget. No messages are partially sliced. UI history is unchanged by this selection.
+
+The manager now explicitly marks the current user pending, failed on error, and complete on success alongside a complete assistant. Retry reuses its stable ID and replaces the failed tail with the edited/current question. Error labels are state, never conversation content. Each request captures its owning conversation ID in addition to existing request tickets/AbortController; both success and failure are discarded if ownership changed. One synchronous pending lock prevents overlaps. Closing/replacing disposes the manager and clears messages, draft, retry ID and context. Same-selection triggers retain the existing manager and focus behavior.
+
+Provider/model, trusted instructions, untrusted-reference JSON role, store:false, non-streaming behavior and server-only credentials are unchanged. No new tools, summarization, paid auxiliary calls or persistent conversation IDs exist. Backend memory holds only the current HTTP request and no conversation cache/database. This limits application retention; it does not change provider retention policies or turn prompt instructions into a guarantee of model compliance against every injection.

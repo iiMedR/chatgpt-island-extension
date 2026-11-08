@@ -83,10 +83,7 @@ it('strips source metadata and mock responses from the bounded wire request', ()
   });
   expect(body).toEqual({
     context: { text: request.context.text },
-    messages: [
-      { role: 'user', content: 'Explain.' },
-      { role: 'user', content: 'Follow-up' },
-    ],
+    messages: [{ role: 'user', content: 'Follow-up' }],
   });
   expect(JSON.stringify(body)).not.toContain('private-path');
   expect(JSON.stringify(body)).not.toContain('capturedAt');

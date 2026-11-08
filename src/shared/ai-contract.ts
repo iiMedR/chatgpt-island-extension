@@ -1,7 +1,9 @@
 export const AI_PORT = 'island-ai';
 export const BACKEND_URL = 'http://127.0.0.1:8787/api/chat';
-export const MAX_HISTORY_MESSAGES = 21;
-export const MAX_TOTAL_CHARACTERS = 60000;
+export const MAX_COMPLETED_HISTORY_MESSAGES = 20;
+export const MAX_HISTORY_CHARACTERS = 30000;
+export const MAX_HISTORY_MESSAGES = MAX_COMPLETED_HISTORY_MESSAGES + 1;
+export const MAX_TOTAL_CHARACTERS = 10000 + 8000 + MAX_HISTORY_CHARACTERS;
 export const MAX_ANSWER_LENGTH = 16000;
 export const BACKEND_DEADLINE_MS = 25000;
 export const RELAY_DEADLINE_MS = 28000;
@@ -70,6 +72,7 @@ export function isChatRequest(value: unknown): value is ChatRequest {
   )
     return false;
   let total = value.context.text.length;
+  let historyCharacters = 0;
   for (const message of value.messages) {
     if (
       !record(message) ||
@@ -85,7 +88,14 @@ export function isChatRequest(value: unknown): value is ChatRequest {
       return false;
     total += message.content.length;
   }
+  for (let index = 0; index < value.messages.length - 1; index++) {
+    const message = value.messages[index];
+    if (message.role !== (index % 2 === 0 ? 'user' : 'assistant')) return false;
+    historyCharacters += message.content.length;
+  }
   return (
+    value.messages.length % 2 === 1 &&
+    historyCharacters <= MAX_HISTORY_CHARACTERS &&
     value.messages[0].role === 'user' &&
     value.messages.at(-1).role === 'user' &&
     total <= MAX_TOTAL_CHARACTERS

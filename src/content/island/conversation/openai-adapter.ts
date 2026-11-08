@@ -1,44 +1,14 @@
-import type { AIAdapter, AIRequest } from './conversation-types';
+import type { AIAdapter } from './conversation-types';
 import {
   AI_PORT,
   AIServiceError,
   isAIErrorCode,
-  isChatRequest,
-  MAX_HISTORY_MESSAGES,
-  MAX_TOTAL_CHARACTERS,
   MAX_ANSWER_LENGTH,
-  MOCK_TEXTS,
   CLIENT_DEADLINE_MS,
 } from '../../../shared/ai-contract';
-import type { ChatRequest, WireMessage } from '../../../shared/ai-contract';
+import { buildBackendRequest } from './context-manager';
+export { buildBackendRequest } from './context-manager';
 
-export function buildBackendRequest(request: AIRequest): ChatRequest {
-  const removeLeadingAssistant = (items: WireMessage[]) => {
-    while (items[0]?.role === 'assistant') items.shift();
-  };
-  const messages: WireMessage[] = request.messages
-    .filter(
-      (message) =>
-        message.role !== 'assistant' ||
-        (message.kind !== 'mock' &&
-          !MOCK_TEXTS.some((text) => text === message.content)),
-    )
-    .map(({ role, content }) => ({ role, content }))
-    .slice(-MAX_HISTORY_MESSAGES);
-  removeLeadingAssistant(messages);
-  while (
-    messages.length > 1 &&
-    request.context.text.length +
-      messages.reduce((sum, message) => sum + message.content.length, 0) >
-      MAX_TOTAL_CHARACTERS
-  ) {
-    messages.shift();
-    removeLeadingAssistant(messages);
-  }
-  const body = { context: { text: request.context.text }, messages };
-  if (!isChatRequest(body)) throw new AIServiceError('invalid_request');
-  return body;
-}
 export function createOpenAIAdapter(): AIAdapter {
   return {
     kind: 'ai',

@@ -85,6 +85,7 @@ export function createConversationManager(
       const retrying =
         failedUserId !== null && previous.messages.at(-1)?.id === failedUserId;
       const user: ChatMessage = Object.freeze({
+        status: 'pending',
         id: retrying ? failedUserId! : crypto.randomUUID(),
         role: 'user',
         content: question.text,
@@ -98,6 +99,7 @@ export function createConversationManager(
         ]),
       });
       const ticket = ++requestId;
+      const conversationId = conversation.id;
       const controller = new AbortController();
       active = controller;
       failedUserId = user.id;
@@ -107,11 +109,17 @@ export function createConversationManager(
           buildAIRequest(conversation),
           controller.signal,
         );
-        if (disposed || ticket !== requestId || controller.signal.aborted)
+        if (
+          disposed ||
+          ticket !== requestId ||
+          controller.signal.aborted ||
+          snapshot.conversation?.id !== conversationId
+        )
           return 'discarded';
         if (typeof answer !== 'string' || !answer.trim())
           throw new Error('Invalid adapter response');
         const assistant: ChatMessage = Object.freeze({
+          status: 'complete',
           kind: adapter.kind ?? 'mock',
           id: crypto.randomUUID(),
           role: 'assistant',
@@ -122,7 +130,14 @@ export function createConversationManager(
         publish({
           conversation: Object.freeze({
             ...conversation,
-            messages: Object.freeze([...conversation.messages, assistant]),
+            messages: Object.freeze([
+              ...conversation.messages.map((message) =>
+                message.id === user.id
+                  ? Object.freeze({ ...message, status: 'complete' as const })
+                  : message,
+              ),
+              assistant,
+            ]),
           }),
           input: '',
           status: 'success',
@@ -130,11 +145,26 @@ export function createConversationManager(
         });
         return 'success';
       } catch (error) {
-        if (disposed || ticket !== requestId || controller.signal.aborted)
+        if (
+          disposed ||
+          ticket !== requestId ||
+          controller.signal.aborted ||
+          snapshot.conversation?.id !== conversationId
+        )
           return 'discarded';
         // Never expose adapter exceptions: they can contain request/context text.
         publish({
           ...snapshot,
+          conversation: Object.freeze({
+            ...conversation,
+            messages: Object.freeze(
+              conversation.messages.map((message) =>
+                message.id === user.id
+                  ? Object.freeze({ ...message, status: 'failed' as const })
+                  : message,
+              ),
+            ),
+          }),
           status: 'error',
           error:
             error instanceof AIServiceError ? error.message : REQUEST_ERROR,

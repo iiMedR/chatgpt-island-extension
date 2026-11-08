@@ -5,6 +5,7 @@ export interface SelectionContext {
 }
 export type MessageRole = 'user' | 'assistant';
 export interface ChatMessage {
+  readonly status?: 'complete' | 'pending' | 'failed';
   readonly kind?: 'mock' | 'ai';
   readonly id: string;
   readonly role: MessageRole;
