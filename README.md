@@ -1,103 +1,109 @@
 # ChatGPT Island
 
-Independent Chrome extension for exploring selected assistant text in a floating, isolated mini-chat. Not affiliated with OpenAI.
+Independent Chrome extension for exploring selected assistant text in a floating mini-chat. Not affiliated with OpenAI.
 
-Milestone 05 adds typed local conversation management to the floating UI. **Real AI responses are not implemented.** Questions and follow-ups are assembled into structured local requests and processed by a deterministic mock adapter. Nothing is sent to ChatGPT or an AI provider.
+Milestone 06 connects the island to the OpenAI Responses API through a local Node.js backend. **API usage may incur charges.** The API key belongs only in the backend environment. Never put it in extension code, browser storage, a build variable, Git, or a chat message.
 
-## Requirements and installation
+## Install and configure
 
-Use Node.js 24 LTS, npm, Git, and current desktop Chrome. From this directory:
+Use Node.js 24 LTS and desktop Chrome. From this repository:
 
 ```sh
 npm ci
+npm --prefix server ci
 npm run build
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `dist`. Refresh ChatGPT after installing or reloading the extension. The generated manifest includes the popup, module service worker, browser command, and ChatGPT-only content IIFE, with React and the island stylesheet embedded in that content bundle.
+Open `chrome://extensions`, enable Developer mode, load unpacked `dist`, and copy the extension's actual 32-character ID. Copy `server/.env.example` to `server/.env` locally and configure:
 
-## Development commands
+```env
+OPENAI_API_KEY=your-local-key
+OPENAI_MODEL=gpt-4.1-mini
+PORT=8787
+EXTENSION_ORIGIN=chrome-extension://your-actual-extension-id
+```
 
-| Command                | Purpose                                                                       |
-| ---------------------- | ----------------------------------------------------------------------------- |
-| `npm run dev`          | Watch all three disk builds with development diagnostics                      |
-| `npm run build`        | Generate the production unpacked extension in `dist/`                         |
-| `npm run typecheck`    | Strict TypeScript checks                                                      |
-| `npm run lint`         | ESLint and React hooks checks                                                 |
-| `npm run test`         | Vitest unit/DOM-fixture tests; build first for artifact checks                |
-| `npm run test:browser` | Playwright unpacked-extension fixture tests; build and install Chromium first |
-| `npm run format`       | Format source and documentation                                               |
-| `npm run format:check` | Check formatting                                                              |
+Replace the entire origin example with the actual ID (letters a–p only). No real `.env` is committed. Restart the backend after changing configuration. If loading from another directory changes the extension ID, update this exact origin; do not use wildcard origins. The extension uses `http://127.0.0.1:8787/api/chat`, so keep PORT=8787 unless deliberately changing and rebuilding the shared endpoint too.
 
-Watch mode uses local files rather than remote HMR scripts. Wait for all three builds, reload the extension, and refresh ChatGPT after code changes. No remote code or relaxed extension CSP is needed.
+`gpt-4.1-mini` is a configurable example with [Responses API support](https://developers.openai.com/api/docs/models/gpt-4.1-mini). Choose a supported model available to your API project. A ChatGPT subscription does not configure this backend's API credentials.
 
-## Open and use the island
-
-1. Highlight text inside one ChatGPT assistant response and allow the existing 80 ms selection debounce to finish.
-2. Press **Alt+Shift+E** while Chrome has focus. The island opens near the right edge and focuses its composer.
-3. The **Selected context** bubble contains your original normalized excerpt. Type in **Ask about the selected text…**. Enter sends; Shift+Enter inserts a newline; IME composition Enter does not send. Questions are trimmed at their boundaries and must contain 1–8,000 UTF-16 units after trimming. Oversized drafts stay editable with a visible limit message; they are not silently truncated or sent.
-4. The question appears separately from the excerpt, followed by **Development placeholder**. This is deterministic local text, not an AI-generated answer. Ask follow-ups normally: each local request includes the original context once and the ordered island history. The composer clears and receives focus only after a successful response. While pending, input is read-only and duplicate sends are blocked. An adapter failure leaves your question intact with a safe inline error; the same send control becomes **Retry question**. You may edit the question before retrying; it replaces the failed turn instead of duplicating it. The current mock always succeeds; injected-adapter tests exercise failures.
-5. Drag the header or focus it and use arrow keys to move. Drag the bottom-right affordance or focus it and use arrow keys to resize. The default is 460 × 520, with 340 × 300 minimums that shrink when the viewport cannot accommodate them.
-6. Use **Expand island** to enlarge it inside the viewport, and **Restore island** to recover the previous geometry when it still fits. No browser fullscreen is used.
-7. Close with **Close island** or Escape while focus is inside. Closing removes the overlay, clears its conversation/context/draft, aborts pending work, and invalidates late replies. Tab can leave this non-modal dialog normally. Focus returns to the previously focused page control when appropriate.
-8. Repeating the shortcut with the same capture focuses the existing composer and preserves the draft/chat. A different capture replaces the context and temporary chat while preserving window geometry. Closing and reopening starts a fresh temporary conversation.
-
-An invalid new page selection preserves the previous valid capture, as in Milestone 02. A shortcut with no valid capture does not open anything. Navigation or page lifecycle invalidation clears the capture and closes the island. No selection, question, or temporary message is persisted.
-
-## Shortcut assignment and diagnostics
-
-Customize the command at `chrome://extensions/shortcuts` under **ChatGPT Island → Explore the last selected assistant text**. Chrome can leave a conflicting shortcut unassigned; OS/browser shortcuts can take precedence. On macOS Alt means Option. The extension does not change your preferences or intercept global DOM keyboard events. See [Chrome Commands API](https://developer.chrome.com/docs/extensions/reference/api/commands).
-
-On `chrome://extensions`, inspect the extension card's **service worker** and Errors section. Inspect the popup by right-clicking it → **Inspect**. Open ChatGPT DevTools for content/island errors; the Elements panel exposes `[data-chatgpt-island-root]` and its shadow root.
-
-For fixed-label diagnostics, use `npm run dev`, reload the extension, refresh ChatGPT, and enable Verbose/Debug in both consoles. Selection validation/rejection/clearing appears in content diagnostics; successful open requests report **Island-open received** and **Trigger: triggered**; the worker reports **Command: triggered**. Text is never logged. Production removes these diagnostics. Inspect assignment with `chrome.commands.getAll()` in the worker console.
-
-Missing/invalidated shortcut receivers report a safe messaging failure in development; refresh ChatGPT after extension reload to recover. Unresponsive background/content message channels have a two-second deadline and are not retried. Adapter failures inside an open island have separate safe inline feedback; real AI behavior remains unimplemented.
-
-## Exact manual Chrome checklist
-
-1. Build, reload the extension at `chrome://extensions`, refresh ChatGPT, and confirm the shortcut is assigned.
-2. Select assistant prose, nested bold/list content, or code; press Alt+Shift+E. Confirm one island, the correct excerpt, and focused input.
-3. Submit a question with Enter; verify the distinct question bubble and clearly labeled local placeholder. Test Shift+Enter, blank input, the disabled send button, and multiline growth.
-4. Scroll a long context/conversation. Confirm the header and composer remain available. The context scroll area is keyboard-focusable. Scroll upward before sending a follow-up: new messages should not force you back down. When already near the bottom, new messages should come into view.
-5. Drag by the header against every viewport edge. Confirm controls do not initiate dragging. Cancel a pointer gesture and confirm movement stops.
-6. Resize down to the minimum and up to the visible limits. Expand/restore. Resize the browser, including a narrow 360 px window and a short viewport; check clipping and access to the composer.
-7. Repeat the shortcut with the same selection and a draft/chat present: retain them and focus the composer. Select a different response excerpt and repeat: replace only the temporary chat/context, with one window/root.
-8. Close and reopen: the conversation/draft is fresh. Escape outside the island should not close it or change ChatGPT keyboard behavior. Tab should leave it normally.
-9. Switch ChatGPT between light/dark modes while open, then test system-theme fallback. Explicit host theme attributes/classes are preferred over system settings.
-10. Refresh or switch conversations: the island closes and capture clears. Test user-message/composer/sidebar selections and cross-message ranges without a prior valid capture; no island should open. Test unsupported websites too.
-11. Confirm original messages and the original composer are unchanged. Inspect Network and storage: the island sends no requests or persistent writes. For safe-rendering QA, select literal HTML/script text in an assistant code block; it must remain text.
-
-## Automated browser fixtures and actual verification
+Start the backend:
 
 ```sh
-npx playwright install chromium
-npm run build
-npm run test:browser
+npm run server:dev
 ```
 
-The Playwright suite uses an isolated temporary profile with the built extension and intercepts a synthetic `https://chatgpt.com/c/island-fixture` page locally. It exercises the real worker/content message channel and UI at 1280 × 800 and 360 × 640, including native textarea newline behavior, pointer gestures, themes, lifecycle, and host preservation. It does not test native OS shortcut delivery or access a real ChatGPT account. Optional `ISLAND_CHROMIUM_EXECUTABLE` selects a compatible test-browser executable; `ISLAND_SCREENSHOT_DIR` saves screenshots outside the repository. Reports/profiles use temporary directories, with path checks before cleanup.
+In a separate terminal, use `npm run dev` for extension watch builds. Reload the extension and refresh ChatGPT after rebuilding. For compiled backend execution, run `npm run build`, then `npm --prefix server start`.
 
-**Actual session results:** 144 Vitest tests passed; production build, typecheck, lint, and formatting passed. The updated two Playwright tests could not launch Chromium: Windows returned `spawn UNKNOWN` before either page loaded. Milestone 05's separate Opera-rendered synthetic fixture verified two questions and two labeled mock responses with one preserved context, composer focus, original input empty, and zero page errors. Milestone 04 also checked light/dark styling and a 360 × 640 embedded viewport. These previews used a local-only copy of the production bundle with its origin guard mapped to localhost and a mock runtime; they were not unpacked-extension or real-ChatGPT integration tests. Native drag/resize and actual Chrome shortcut delivery remain manual checks. See PROGRESS.md for exact status.
+## Commands
 
-## Privacy and limitations
+| Command                 | Purpose                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| `npm run dev`           | Watch extension builds using the real adapter             |
+| `npm run server:dev`    | Start local backend with server/.env                      |
+| `npm run build`         | Build production extension and backend                    |
+| `npm run server:build`  | Build backend only                                        |
+| `npm run typecheck`     | Check extension and backend TypeScript                    |
+| `npm run lint`          | Check both packages and tests                             |
+| `npm run test`          | Unit, UI, backend and mocked full-flow tests; build first |
+| `npm run build:offline` | Explicit mock-only extension build                        |
+| `npm run dev:offline`   | Watch mock-only extension builds                          |
+| `npm run test:browser`  | Build offline, then run Playwright extension fixtures     |
 
-Only explicitly selected, validated assistant text enters local memory. Empty/whitespace selections, selections over 10,000 trimmed UTF-16 units, editable controls, user messages, navigation, extension UI, and cross-region ranges are rejected. Semantic ChatGPT DOM attributes remain compatibility assumptions; unknown layouts fail closed. Permissions remain only `activeTab`, with content restricted to `https://chatgpt.com/*`.
+All automated OpenAI calls are mocked; standard tests incur no API usage. Browser tests require installed Playwright Chromium (`npx playwright install chromium`) and assert offline build metadata before interacting. They leave `dist` in mock mode: **run `npm run build` afterward to restore real integration**. Offline builds disable the worker AI relay; there is no silent fallback from failed real requests to invented answers.
 
-The island adds/removes only its own host element, never edits original messages, never submits to the original composer, never collects full conversations, never logs text, and never performs AI/network requests. Shadow DOM isolates styling; it is not a security boundary against the host website. There is no persistent history, provider integration, markdown rendering, or cross-tab conversation state. Icons/logos are original monochrome UI primitives; no OpenAI logo is used.
+## Use the island
 
-## Milestone 05 local conversation checklist
+Highlight text inside one ChatGPT assistant response, allow the 80 ms selection debounce to finish, then press **Alt+Shift+E**. Configure this command through `chrome://extensions/shortcuts` if Chrome leaves it unassigned or another binding takes precedence. No global page keyboard interception is used.
 
-1. Run `npm run build`; reload the unpacked extension and refresh ChatGPT.
-2. Select text in one assistant response, then press Alt+Shift+E.
-3. Verify the **Selected context** bubble preserves the excerpt and the composer has focus.
-4. Type **Explain this part to me.** and submit with Enter.
-5. Verify a separate question bubble and the labeled mock response. The input should clear and regain focus.
-6. Ask **How does retrieval help?** (or another follow-up). Verify earlier questions/responses remain in order, with one selected-context bubble.
-7. Test Shift+Enter and multiline input. Try blank/whitespace input: no request should be submitted.
-8. Paste 8,001 non-whitespace characters: verify the limit message and disabled send button. Exactly 8,000 normalized characters is allowed. Text length uses JavaScript UTF-16 units, as does the existing selection limit.
-9. Close and reopen using the retained valid capture: expect a fresh, empty island conversation. Closing clears island context; the independent selection manager still retains its valid capture until lifecycle invalidation.
-10. Select a different assistant excerpt and invoke the shortcut: verify replacement context and no previous island messages. Repeating the same capture should preserve the current draft/chat.
-11. Scroll upward in a longer conversation and submit again: reading position should be preserved. Scroll to the bottom and submit: new messages should come into view.
-12. Confirm the original ChatGPT messages and original composer remain unchanged. Inspect Network/storage: no AI request or conversation persistence should occur.
+The island displays **Selected context** separately from your questions. Enter submits; Shift+Enter adds a newline; IME Enter does not submit mid-composition. Questions are trimmed and limited to 8,000 UTF-16 units. Blank or oversized drafts cannot be sent. Input grows for multiline content. While submitting, a subtle status appears and duplicate sends are blocked. A successful answer is labeled **Assistant**, clears the draft and refocuses the composer. Offline mock answers remain labeled **Development placeholder**.
 
-Request failure/retry and delayed responses are verified with injected test adapters, not a fake-error control or artificial latency in the product. The default mock is deterministic and returns immediately. Full Chrome load/shortcut verification is still pending because the current test environment cannot spawn Chromium.
+Follow-ups retain the original selected context and ordered island history. Requests send at most 21 recent messages and 60,000 total text units, dropping oldest turns when needed. Selected context is included once, separately. Model output is limited to 2,048 tokens and 16,000 text units; incomplete/empty output produces a safe error. Failed questions remain editable; Retry question replaces the failed unanswered turn rather than duplicating it.
+
+Drag the header or use its arrow keys. Resize from the bottom-right handle or its arrow keys. Expand/restore stays within the viewport; default dimensions are 460 × 520 with viewport-adjusted minimums. Light/dark host theme attributes are preferred, with system theme fallback. Messages scroll internally without forcing a reader who scrolled upward back to the bottom.
+
+Close using the close control or Escape inside the island. This aborts pending work and clears its temporary context, draft and chat. Reopening starts fresh using the selection manager's independent retained valid capture. Repeating the same capture while open focuses the current chat; another valid capture replaces it. Navigation clears the capture and closes the island. Unsupported, user-message, editable, sidebar and cross-region selections are rejected. Invalid new selections retain the last valid capture under the existing selection rules.
+
+## Manual Chrome and API verification
+
+These live steps have **not** been performed in this session:
+
+1. Configure your backend API key and exact extension origin as above.
+2. Start the backend with `npm run server:dev`.
+3. Run `npm run build`; reload `dist` through `chrome://extensions`, then refresh ChatGPT.
+4. Open `https://chatgpt.com` and verify shortcut assignment.
+5. Select part of one assistant response.
+6. Press Alt+Shift+E and verify the excerpt and focused composer.
+7. Type “Explain this part in simple words.”
+8. Submit; verify the waiting state and disabled duplicate submission.
+9. Verify a real answer labeled Assistant appears, then composer focus returns.
+10. Ask a follow-up question.
+11. Verify the answer uses the selected context and previous island turns.
+12. Close and reopen the island.
+13. Verify the previous temporary conversation was discarded; test a different selected context too.
+14. Stop the backend, submit again, and verify a concise connection error and editable retry. Restart and retry. Close during a request to verify no late answer appears in a reopened chat.
+15. Confirm original ChatGPT messages and composer remain unchanged. Also test drag, resize, expand/restore, light/dark themes and a small viewport.
+
+Inspect the service worker through its extension card and content/island through ChatGPT DevTools. Development builds emit fixed shortcut/selection status labels, never text. The backend logs only fixed error codes/statuses. Missing receivers after extension reload require refreshing ChatGPT. Inspect requests only with your own non-sensitive test content; browser DevTools can expose request bodies even though the extension does not log them.
+
+## Troubleshooting
+
+- Backend unavailable: start the server, keep port 8787 free, grant the new loopback host permission by reloading the extension, and refresh ChatGPT.
+- Origin rejected: copy the actual extension ID and restart the backend. Use 127.0.0.1, not localhost. Host and Origin must both match exactly.
+- Missing/invalid API key: set the server environment locally and restart; never move the key into the extension.
+- Unsupported model: change OPENAI_MODEL to an available Responses-compatible model and restart.
+- Rate limit or insufficient credits: check your API project's limits/billing; there is no automatic paid retry.
+- Timeout: retry manually. Backend generation has a 25-second deadline, worker relay 28 seconds and client 30 seconds. Closing/changing context aborts the request.
+- Empty/incomplete answer: a safe error is shown rather than fabricated or partial content. Retry or ask a shorter question.
+
+## Privacy and local-development limits
+
+Only explicitly selected, validated assistant text (up to 10,000 UTF-16 units), your island questions, and bounded real island answers are transmitted: content → extension worker → loopback backend → OpenAI. URLs, capture timestamps, IDs and mock answers are stripped from provider requests. No complete original conversation is read. No original message or ChatGPT composer is modified. No selected text, questions or answers are logged or written to browser storage/database. React renders text safely, without raw HTML.
+
+The official SDK exists only in `server/`. Credentials are loaded only there. Responses use separate trusted instructions, untrusted reference context, `stream:false` and `store:false`, with no server-side conversation IDs. [Stateless Responses requests](https://developers.openai.com/api/docs/guides/migrate-to-responses) do not guarantee zero provider retention; OpenAI data policies still apply. Shadow DOM isolates styles, not secrets from the host page.
+
+The server binds only 127.0.0.1, validates exact Origin/Host, restricts CORS, JSON shape and body size, rejects client model/credentials, and disables SDK retries and content logging. **CORS/Origin checks are not authentication.** This backend is for a trusted local machine and must not be exposed publicly. There are no accounts, subscriptions, public deployment, streaming, persistent history or Milestone 07 features.
+
+Manifest permissions are activeTab plus only `http://127.0.0.1/*` host access; Chrome match patterns cannot restrict that permission to one port, but runtime code uses the fixed port/path. Content injection remains limited to HTTPS chatgpt.com. No incognito access is enabled. Semantic ChatGPT DOM attributes remain a compatibility assumption; unknown layouts fail closed.
+
+Actual verification and pending browser/live API limitations are recorded in PROGRESS.md.

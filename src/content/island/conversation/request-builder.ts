@@ -9,8 +9,14 @@ export function buildAIRequest(conversation: IslandConversation): AIRequest {
       capturedAt: conversation.context.capturedAt,
     }),
     messages: Object.freeze(
-      conversation.messages.map(({ id, role, content, createdAt }) =>
-        Object.freeze({ id, role, content, createdAt }),
+      conversation.messages.map(({ id, role, content, createdAt, kind }) =>
+        Object.freeze({
+          id,
+          role,
+          content,
+          createdAt,
+          ...(kind ? { kind } : {}),
+        }),
       ),
     ),
   });

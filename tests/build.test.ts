@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { manifest } from '../manifest.config';
 it('limits permissions and injection scope', () => {
@@ -7,7 +7,7 @@ it('limits permissions and injection scope', () => {
   expect(manifest.content_scripts?.[0].matches).toEqual([
     'https://chatgpt.com/*',
   ]);
-  expect(manifest.host_permissions).toBeUndefined();
+  expect(manifest.host_permissions).toEqual(['http://127.0.0.1/*']);
   expect(manifest.commands).toEqual({
     'open-island': {
       suggested_key: { default: 'Alt+Shift+E' },
@@ -38,4 +38,14 @@ it('ships popup, background, and standalone content assets', () => {
   expect(content).toContain('.resize-handle');
   expect(content).toContain('--background');
   expect(content).not.toContain('process.env.NODE_ENV');
+});
+it('does not bundle backend SDK, provider endpoint or server credential values', () => {
+  for (const entry of readdirSync('dist', { recursive: true })) {
+    if (!/\.(?:js|json|html|css)$/.test(String(entry))) continue;
+    const text = readFileSync(`dist/${entry}`, 'utf8');
+    expect(text).not.toContain('test-server-key-canary-ISLAND-M06');
+    expect(text).not.toContain('https://api.openai.com/v1');
+    expect(text).not.toContain('X-Stainless');
+    expect(text).not.toMatch(/sk-(?:proj-)?[A-Za-z0-9_-]{32,}/);
+  }
 });

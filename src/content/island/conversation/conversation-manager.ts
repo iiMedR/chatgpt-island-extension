@@ -7,6 +7,7 @@ import type {
 } from './conversation-types';
 import { buildAIRequest } from './request-builder';
 import { mockAIAdapter } from './mock-ai-adapter';
+import { AIServiceError } from '../../../shared/ai-contract';
 
 export const MAX_MESSAGE_LENGTH = 8000;
 export const REQUEST_ERROR =
@@ -54,6 +55,7 @@ export function createConversationManager(
     for (const listener of [...listeners]) listener();
   }
   return {
+    kind: adapter.kind ?? 'mock',
     getSnapshot: () => snapshot,
     subscribe(listener: () => void) {
       if (!disposed) listeners.add(listener);
@@ -110,6 +112,7 @@ export function createConversationManager(
         if (typeof answer !== 'string' || !answer.trim())
           throw new Error('Invalid adapter response');
         const assistant: ChatMessage = Object.freeze({
+          kind: adapter.kind ?? 'mock',
           id: crypto.randomUUID(),
           role: 'assistant',
           content: answer,
@@ -126,11 +129,16 @@ export function createConversationManager(
           error: null,
         });
         return 'success';
-      } catch {
+      } catch (error) {
         if (disposed || ticket !== requestId || controller.signal.aborted)
           return 'discarded';
         // Never expose adapter exceptions: they can contain request/context text.
-        publish({ ...snapshot, status: 'error', error: REQUEST_ERROR });
+        publish({
+          ...snapshot,
+          status: 'error',
+          error:
+            error instanceof AIServiceError ? error.message : REQUEST_ERROR,
+        });
         return 'error';
       } finally {
         if (ticket === requestId) active = null;

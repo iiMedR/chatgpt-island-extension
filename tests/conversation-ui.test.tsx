@@ -213,3 +213,15 @@ it('renders malicious-looking input safely through the request and message lifec
   expect(ui.getByText(text)).toBeInTheDocument();
   expect(shadow.querySelector('img,script')).toBeNull();
 });
+it('labels real-adapter responses as Assistant and shows the transmission notice', async () => {
+  const { ui } = setup({
+    kind: 'ai',
+    generateResponse: async () => 'Provider response fixture',
+  });
+  await send(ui, 'Explain');
+  expect(ui.getByText('Assistant')).toBeInTheDocument();
+  expect(ui.queryByText('Development placeholder')).toBeNull();
+  expect(
+    ui.getByText('Selected context and island messages are sent to OpenAI.'),
+  ).toBeInTheDocument();
+});

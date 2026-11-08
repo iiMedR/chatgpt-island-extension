@@ -5,6 +5,7 @@ export interface SelectionContext {
 }
 export type MessageRole = 'user' | 'assistant';
 export interface ChatMessage {
+  readonly kind?: 'mock' | 'ai';
   readonly id: string;
   readonly role: MessageRole;
   readonly content: string;
@@ -21,6 +22,7 @@ export interface AIRequest {
   readonly messages: readonly ChatMessage[];
 }
 export interface AIAdapter {
+  readonly kind?: 'mock' | 'ai';
   generateResponse(request: AIRequest, signal?: AbortSignal): Promise<string>;
 }
 export type RequestStatus = 'idle' | 'submitting' | 'success' | 'error';

@@ -2,6 +2,16 @@ import { test, expect, chromium } from '@playwright/test';
 import { mkdtemp, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join, sep } from 'node:path';
+import { readFileSync } from 'node:fs';
+test.beforeAll(() => {
+  const info = JSON.parse(readFileSync('dist/build-info.json', 'utf8')) as {
+    aiMode: string;
+  };
+  expect(
+    info.aiMode,
+    'Browser tests require an offline build; never use real API billing here.',
+  ).toBe('mock');
+});
 
 const fixture = `<!doctype html><html class="light"><head><title>ChatGPT Island — local conversation fixture</title><link rel="icon" href="data:,"><style>
 body{margin:0;background:#fafafa;color:#222;font:15px/1.7 system-ui}main{max-width:620px;margin:80px 32px;padding:24px}h1{font-size:22px}p{margin:24px 0}textarea{padding:12px;border:1px solid #ddd;width:90%;font:inherit}button{font-size:36px}html.dark body{background:#171717;color:#eee}

@@ -7,7 +7,10 @@ afterEach(() => {
 it('registers the installation listener at worker startup', async () => {
   const addListener = vi.fn();
   vi.stubGlobal('chrome', {
-    runtime: { onInstalled: { addListener } },
+    runtime: {
+      onInstalled: { addListener },
+      onConnect: { addListener: vi.fn() },
+    },
     commands: { onCommand: { addListener: vi.fn() } },
   });
   await import('../src/background/index');

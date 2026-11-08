@@ -72,7 +72,9 @@ export function IslandChat({
               <h3>
                 {message.role === 'user'
                   ? 'Your question'
-                  : 'Development placeholder'}
+                  : message.kind === 'ai'
+                    ? 'Assistant'
+                    : 'Development placeholder'}
               </h3>
               <p>{message.content}</p>
             </article>
@@ -134,8 +136,12 @@ export function IslandChat({
           {tooLong
             ? 'Questions must be 8,000 characters or fewer.'
             : submitting
-              ? 'Preparing local placeholder…'
-              : 'Local preview · AI not connected'}
+              ? manager.kind === 'ai'
+                ? 'Waiting for AI response…'
+                : 'Preparing local placeholder…'
+              : manager.kind === 'ai'
+                ? 'Selected context and island messages are sent to OpenAI.'
+                : 'Local preview · AI not connected'}
           {state.input.length > 7800
             ? ` · ${state.input.trim().length.toLocaleString()} / 8,000`
             : ''}

@@ -3,6 +3,8 @@ import { createIslandTrigger } from './island-trigger';
 import { isExtensionMessage } from '../shared/messages';
 import { isSupportedUrl } from '../utils/isSupportedUrl';
 import { createIslandController } from './island/island-controller';
+import { createOpenAIAdapter } from './island/conversation/openai-adapter';
+import { mockAIAdapter } from './island/conversation/mock-ai-adapter';
 
 // This slot lives only in the extension's isolated world, never the host DOM.
 type ContentWindow = Window & {
@@ -24,7 +26,10 @@ export function initializeContent(
   if (!isSupportedUrl(window.location.href) || !contextValid()) return () => {};
   if (import.meta.env.DEV)
     console.debug('[ChatGPT Island] Content script initialized');
-  const island = createIslandController(document);
+  const island = createIslandController(
+    document,
+    __ISLAND_OFFLINE__ ? mockAIAdapter : createOpenAIAdapter(),
+  );
   const manager = createSelectionManager({
     window,
     document,

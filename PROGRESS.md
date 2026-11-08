@@ -2,14 +2,14 @@
 
 ## Milestone plan
 
-Prompts 01–05 were supplied. Earlier milestone sections are historical checkpoints. Milestone 05 implements local conversation management with unit and rendered-fixture evidence; Chrome integration verification remains pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–06 were supplied. Earlier sections are historical checkpoints. Milestone 06 implements the local backend and Responses integration with mocked automated evidence; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
 3. Keyboard shortcut and island trigger — implemented and automated verification passed; live Chrome testing pending.
 4. Floating island UI — implemented; partial verification status recorded below.
 5. Message composer and context management — implemented; verification recorded below.
-6. Real AI provider integration — not started (provisional plan).
+6. Real AI provider integration — implemented; Partial pending configured live OpenAI/Chrome verification below.
 7. Provider/conversation refinement — not started (provisional plan).
 8. Theme, accessibility, and interaction refinement — not started.
 9. Security, regression, and browser compatibility verification — not started.
@@ -187,3 +187,38 @@ Architecture choices: a small per-session immutable manager is owned by the isla
 Known limitations and next steps: real Chrome/native shortcut integration remains pending because Chromium cannot spawn here. The default mock has no natural error/latency mode; injected test adapters cover failures and cancellation without adding product simulation controls. Length limits count normalized UTF-16 units; oversized drafts are rejected, not silently truncated. Selected context remains accessible in the scrollable conversation, with the same selection-manager debounce/lifecycle/semantic DOM assumptions as previous milestones. Closing clears island context/messages/draft but preserves the independent last valid capture for a fresh reopen. Future provider work requires a separately specified and authorized milestone; no Milestone 06 implementation has begun.
 
 Status: **Partial** — implementation and automated unit/build verification are complete, with rendered follow-up evidence; actual Chrome installation/integration remains explicitly unverified.
+
+## Milestone 06 — local backend and Responses API
+
+Status: **Partial** — implementation and automated verification passed; a configured paid OpenAI response and actual Chrome extension installation/shortcut flow have not been verified. No API key was provided or sought, and no paid API call was made. Milestone 07 has not begun.
+
+Implemented:
+
+- Separate TypeScript Fastify backend with official OpenAI Node SDK, server-only environment credentials/configured model, fixed loopback binding and validated exact extension origin/Host.
+- Strict shared payload validation, JSON/body/history/role limits, separate trusted instructions and untrusted selected context, stateless non-streaming Responses requests with store:false and bounded output. Context appears once; URLs/timestamps/IDs and mock messages are excluded.
+- Real production adapter via one-request runtime Ports and fixed worker loopback relay; only loopback host permission added. Explicit offline builds retain the mock and disable relay registration, with build metadata guarding browser tests against paid calls.
+- Waiting/real Assistant labels, privacy notice, allowlisted errors, retry without duplicate questions, layered deadlines, disconnect/close/context-change cancellation and stale-response protection.
+- README setup, usage, exact manual checklist, cost warning, troubleshooting and privacy/security limitations; architecture updated to describe the current provider boundary.
+
+Actual verification:
+
+| Command/check          | Result                                                                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| npm run typecheck      | Passed; includes backend equivalent typecheck                                                                                                          |
+| npm run lint           | Passed; covers server and extension                                                                                                                    |
+| npm run build          | Passed; production extension plus backend TypeScript output                                                                                            |
+| npm run test           | 182 tests passed across 14 files; all provider calls mocked                                                                                            |
+| npm run test:browser   | Offline build and guard succeeded; both cases failed before page load because Playwright Chromium executable was absent in the sandbox                 |
+| Production restoration | Rebuilt after browser attempt; dist/build-info.json reports openai                                                                                     |
+| Manifest inspection    | Correct command, activeTab, only http://127.0.0.1/* host permission, ChatGPT-only content injection                                                    |
+| Credential boundary    | Production build ran with synthetic server-key canary; generated-asset tests found neither canary, key patterns, provider endpoint nor SDK identifiers |
+| Loopback cancellation  | Real ephemeral HTTP disconnect test passed with loopback access outside sandbox; SDK itself mocked                                                     |
+| Live API/manual Chrome | Not performed; no configured key, browser unavailable                                                                                                  |
+
+The 38 additional tests cover schema/body/history/content-type/origin/Host validation; separate provider instructions and ordered context; missing/invalid credentials; unsupported model; quota/rate limits; incomplete/empty output; network/deadline failures; worker sender validation and one fetch per port; adapter/worker disconnect cancellation; stripped metadata/mock messages; real-answer UI labels; and a complete manager→adapter→worker→Fastify→mock SDK flow with follow-up history. Earlier disposal/stale-response, safe rendering, original-page preservation and retry tests remain passing. The socket test initially encountered sandbox bind restrictions, then passed with explicit local-loopback access. No test reached the real provider.
+
+Dependencies are locked independently in server/package-lock.json (Fastify 5.12.8 and OpenAI 7.53.0). The root SDK-free extension package remains separate. Root checks intentionally cover both packages, without adding monorepo tooling.
+
+Known limits: trusted local development only; Origin/CORS is not authentication. Extension IDs require explicit environment updates. Chrome host patterns cannot limit loopback permission by port, but code fixes port 8787/path. API usage can cost money. store:false does not guarantee zero provider retention. History is bounded at 21 messages/60,000 UTF-16 units, answers at 2,048 tokens/16,000 units, and generation at 25 seconds (worker 28/client 30). Incomplete output fails safely. No streaming, persistence, public hosting, accounts or automatic retries. ChatGPT semantic DOM/native shortcut compatibility remains a manual concern.
+
+Remaining evidence: follow README's live 15-step checklist with a locally configured key and available Chrome; confirm real output/follow-up context, cancellation, unavailable backend errors and unchanged original conversation. No remaining milestone implementation is authorized by this checkpoint.

@@ -8,13 +8,17 @@
   },
   "scripts": {
     "dev": "tsx scripts/build.ts --watch",
-    "build": "tsx scripts/build.ts",
-    "typecheck": "tsc --noEmit",
+    "build": "tsx scripts/build.ts && npm --prefix server run build",
+    "typecheck": "tsc --noEmit && npm --prefix server run typecheck",
     "lint": "eslint .",
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:browser": "playwright test"
+    "test:browser": "npm run build:offline && playwright test",
+    "server:dev": "npm --prefix server run dev",
+    "server:build": "npm --prefix server run build",
+    "build:offline": "tsx scripts/build.ts --offline",
+    "dev:offline": "tsx scripts/build.ts --watch --offline"
   },
   "dependencies": {
     "react": "^19.2.0",
