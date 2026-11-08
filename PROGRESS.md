@@ -2,12 +2,12 @@
 
 ## Milestone plan
 
-Prompts 01–03 were supplied. Milestone 04 is the floating island UI, as specified by Prompt 03; later milestones remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–04 were supplied. Milestones 01–03 below are historical checkpoints. Milestone 04 is implemented with unit and rendered-fixture evidence; Chrome integration verification remains pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
 3. Keyboard shortcut and island trigger — implemented and automated verification passed; live Chrome testing pending.
-4. Floating island UI — not started.
+4. Floating island UI — implemented; partial verification status recorded below.
 5. Provider configuration and secure integration boundary — not started.
 6. AI requests, response display, cancellation, and errors — not started.
 7. Temporary follow-up conversation state — not started.
@@ -46,7 +46,7 @@ Manual Chrome verification has not been performed: the exposed desktop browser i
 
 ## Known issues and next step
 
-No browser-level verification yet. Readiness reports URL support only. Milestone 03 adds the shortcut and local trigger; Milestone 04 will implement the floating island UI and has not started.
+The floating UI now renders in a local Opera fixture. Live ChatGPT/unpacked Chrome integration remains unverified. The popup's Ready label still reports supported URL only. No AI integration has started.
 
 ## Milestone 02 — text selection detection
 
@@ -105,3 +105,45 @@ Known limitations: Chrome/OS conflicts can leave the shortcut unassigned or prev
 Scope clarifications: the earlier provisional roadmap included a shell in Milestone 03; the supplied Prompt 03 places all floating UI in Milestone 04, and none was built. Selection expiration reuses existing navigation/page lifecycle rules instead of inventing an age TTL. The only new worker timer is a two-second per-message response deadline required for unresponsive receivers; it is cleared on completion and never drives retries. A timed-out acknowledgement cannot cancel a request already delivered. No API integration or Milestone 04 implementation has started.
 
 Status: **Complete for implementation and automated acceptance checks**, with manual Chrome verification explicitly pending. No browser integration success is claimed.
+
+## Milestone 04 — floating island UI
+
+- [x] Valid production trigger mounts one React island in an extension-owned Shadow DOM.
+- [x] Separate selected-context bubble, local questions, and labeled deterministic development placeholder.
+- [x] Neutral light/dark theme tokens shared with popup, scoped compiled CSS, no global stylesheet or original message/input changes.
+- [x] Composer focus, blank-submit prevention, Enter/Shift+Enter/IME behavior, multiline growth, local Escape, normal Tab navigation, and visible focus.
+- [x] Header dragging and bottom-right resizing with pointer capture, cancellation/cleanup, keyboard alternatives, pure viewport bounds, and adaptive minimums.
+- [x] Expand/restore without fullscreen; viewport resize/visualViewport adaptation while open.
+- [x] Same-context triggers keep chat/draft and focus composer; changed context resets chat while preserving geometry; one live root/window.
+- [x] Close unmounts and clears temporary chat, removes host, and releases theme/window/gesture listeners. Reopen starts fresh.
+- [x] Selection lifecycle invalidation closes the island using the existing manager's onClear callback.
+- [x] React text-only rendering; no persistent writes, network/AI calls, full conversation reads, text logging, or new permissions.
+- [x] README usage/manual checklist, architecture, and progress updated.
+- [x] Typecheck, lint, production build, and 121 unit/DOM tests across 9 files passed.
+- [x] Built IIFE checked for embedded island UI/CSS, no unresolved Node environment global, and no development logging.
+- [x] Rendered Opera synthetic fixture: light/dark context/question/placeholder visible, composer focused, one island, original input empty, no page errors; 360 × 640 embedded viewport visually contained.
+- [x] Conventional commit: `feat: implement floating island UI` (see Git history).
+- [ ] Playwright unpacked-extension suite: both planned cases blocked before page load by Windows `spawn UNKNOWN`.
+- [ ] Manual Chrome/real ChatGPT shortcut, native pointer dragging/resizing, OS/IME behavior, and full integration verification.
+
+Verification on 2026-11-08, Node 24.22.1:
+
+| Check                  | Actual result                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `npm run typecheck`    | Passed                                                                                                                  |
+| `npm run lint`         | Passed                                                                                                                  |
+| `npm run test`         | 121 tests passed across 9 files                                                                                         |
+| `npm run build`        | Passed; content IIFE embeds production React and scoped island CSS (about 239 kB before gzip)                           |
+| `npm run format:check` | Passed after formatting                                                                                                 |
+| `npm run test:browser` | 2 tests could not execute: Chromium process creation failed with `spawn UNKNOWN`; no page loaded                        |
+| Rendered preview       | Opera local synthetic fixture at desktop and embedded 360 × 640 viewport; screenshots and accessibility state inspected |
+
+Browser availability: the dedicated Browser plugin/skill is absent, so the requested regular Playwright path was attempted. Both downloaded Chromium 1254 and pre-existing Chromium 1248 failed to spawn, including a retry through the app's Node runtime. The in-app browser could not reach the initial sandbox-local server. Desktop input automation timed out waiting for app access. An exposed loopback fixture plus the Opera connector provided rendered evidence without accessing actual ChatGPT messages: a temporary production-bundle copy outside the repository mapped the supported origin to localhost, with a mocked Chrome runtime and scripted synthetic submission. This preview does not prove actual Chrome installation, native shortcut delivery, or physical pointer behavior. It reported one island, focused composer, two temporary messages, original composer empty, and zero page errors in light/dark modes; screenshots showed no clipping in the narrow embedded viewport. No Playwright integration success is claimed.
+
+The added unit tests cover opening from a valid typed trigger; selected text; focus; empty messages; Enter, native-default Shift+Enter and IME guard; local placeholder; closing/focus restoration/fresh reopen; same/new context behavior; expansion/restoration and retained geometry; root/body theme selection and system fallback; literal untrusted HTML text; viewport clamping/adaptive minimums; pointer capture/release/cancel, header control exclusion, non-primary buttons, resize minimums, viewport shrink, and unmount cleanup. Existing selection/command/messaging tests still pass. Their mocked content bridge isolates its callback consumer; real rendering is tested separately with the controller and typed trigger.
+
+Implementation choices: the UI lives in `src/content/island`, with two React components (window and keyed chat session), a controller, geometry hook/helpers, scoped stylesheet, and theme observer. Popup/Shadow DOM tokens were extracted into one shared CSS file. Vite library-mode NODE_ENV substitution was added to avoid bundling development React and unresolved process globals. Playwright is the only added development dependency; no production dependency or manifest permission was added. Screenshots, temporary harness/server, and browser reports are outside the repository. The browser suite uses a synthetic intercepted ChatGPT-origin page and the real worker/content request, not real account content or native OS shortcut events.
+
+Known limitations: the Chrome end-to-end and native pointer checks remain pending because the browser runtime cannot launch here. The last completed selection still uses the existing 80 ms debounce and semantic ChatGPT DOM/path assumptions. A closed island clears chat/draft but the selection manager retains its valid capture until lifecycle invalidation, permitting fresh reopen. Extremely short viewports may limit usable content space despite relaxed minimums. Host CSS isolation is implemented, but Shadow DOM is not a confidentiality boundary against the host page. AI responses remain unavailable; no Milestone 05 work has started.
+
+Status: **Partial** — implementation, unit tests, production assets, and rendered component previews are complete; unpacked Chrome/native interaction verification is explicitly outstanding.

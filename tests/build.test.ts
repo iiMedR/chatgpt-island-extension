@@ -33,4 +33,9 @@ it('ships popup, background, and standalone content assets', () => {
   expect(readFileSync('dist/background.js', 'utf8')).not.toContain(
     'console.debug',
   );
+  const content = readFileSync('dist/content.js', 'utf8');
+  expect(content).toContain('Selected context');
+  expect(content).toContain('.resize-handle');
+  expect(content).toContain('--background');
+  expect(content).not.toContain('process.env.NODE_ENV');
 });

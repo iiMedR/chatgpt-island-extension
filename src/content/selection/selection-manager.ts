@@ -6,6 +6,7 @@ interface Options {
   document: Document;
   navigation?: EventTarget;
   debug?: (event: SelectionDiagnostic, reason?: string) => void;
+  onClear?: () => void;
 }
 
 function route(url: string): string {
@@ -29,6 +30,7 @@ export function createSelectionManager({
   document,
   navigation,
   debug,
+  onClear,
 }: Options) {
   let captured: CapturedSelection | null = null;
   let currentRoute = route(window.location.href);
@@ -42,6 +44,7 @@ export function createSelectionManager({
     pending = undefined;
     stale = signature(window.getSelection());
     debug?.('cleared');
+    onClear?.();
   };
   const checkNavigation = () => {
     const next = route(window.location.href);

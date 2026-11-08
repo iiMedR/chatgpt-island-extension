@@ -2,6 +2,7 @@ import { createSelectionManager } from './selection/selection-manager';
 import { createIslandTrigger } from './island-trigger';
 import { isExtensionMessage } from '../shared/messages';
 import { isSupportedUrl } from '../utils/isSupportedUrl';
+import { createIslandController } from './island/island-controller';
 
 // This slot lives only in the extension's isolated world, never the host DOM.
 type ContentWindow = Window & {
@@ -23,10 +24,12 @@ export function initializeContent(
   if (!isSupportedUrl(window.location.href) || !contextValid()) return () => {};
   if (import.meta.env.DEV)
     console.debug('[ChatGPT Island] Content script initialized');
+  const island = createIslandController(document);
   const manager = createSelectionManager({
     window,
     document,
     navigation: window.navigation,
+    onClear: () => island.close(false),
     debug: import.meta.env.DEV
       ? (event, reason) =>
           console.debug('[ChatGPT Island] Selection:', event, reason ?? '')
@@ -37,10 +40,11 @@ export function initializeContent(
     getSelection: () => manager.getSelection(),
     getUrl: () => window.location.href,
     isContextValid: () => !disposed && contextValid(),
-    // Replace this callback with the React island controller in Milestone 04.
-    onOpen: import.meta.env.DEV
-      ? () => console.debug('[ChatGPT Island] Island-open received')
-      : () => {},
+    onOpen: (payload) => {
+      island.open(payload);
+      if (import.meta.env.DEV)
+        console.debug('[ChatGPT Island] Island-open received');
+    },
   });
   const listener: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (
     message: unknown,
@@ -80,6 +84,7 @@ export function initializeContent(
     if (disposed) return;
     disposed = true;
     manager.dispose();
+    island.dispose();
     window.removeEventListener('pagehide', hide);
     if (contextValid()) {
       try {

@@ -1,0 +1,214 @@
+@import '../../styles/tokens.css';
+:host {
+  font-family: system-ui, sans-serif;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+.island {
+  position: absolute;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 48px #0002,
+    0 2px 8px #0001;
+  font:
+    14px/1.55 system-ui,
+    sans-serif;
+  text-align: left;
+  direction: ltr;
+}
+button,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+button:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: -3px;
+}
+.island-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--outline);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.island-header:active {
+  cursor: grabbing;
+}
+h2,
+h3,
+p,
+blockquote {
+  margin: 0;
+}
+h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.island-header p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+}
+.icon-button:hover {
+  background: var(--secondary);
+}
+.conversation {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px 18px 8px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.message {
+  margin-bottom: 18px;
+  overflow-wrap: anywhere;
+}
+.message h3 {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.message p,
+blockquote {
+  white-space: pre-wrap;
+}
+.context,
+.user {
+  background: var(--secondary);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-left: 22px;
+}
+.context blockquote {
+  max-height: 144px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.assistant {
+  padding: 0 4px;
+}
+.assistant h3 {
+  font-size: 11px;
+}
+.empty-note {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 2px 4px;
+}
+.composer-area {
+  flex: 0 0 auto;
+  padding: 12px 16px 10px;
+}
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  border: 1px solid var(--outline);
+  background: var(--input);
+  border-radius: 18px;
+  padding: 10px 10px 10px 14px;
+}
+textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 24px;
+  max-height: min(112px, 25vh);
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  resize: none;
+  line-height: 1.45;
+}
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.composer:focus-within {
+  outline: 2px solid var(--muted);
+  outline-offset: 2px;
+}
+textarea:focus-visible {
+  outline: none;
+}
+.send-button {
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--foreground);
+  color: var(--background);
+}
+.local-note {
+  font-size: 10px;
+  text-align: center;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.resize-handle {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  border: 0;
+  background: transparent;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+@media (max-height: 360px) {
+  .island-header {
+    padding: 8px 12px;
+  }
+  .composer-area {
+    padding: 6px 12px;
+  }
+  .local-note {
+    display: none;
+  }
+}

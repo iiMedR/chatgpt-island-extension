@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { initializeContent } from '../src/content/initialize';
 import { handleCommand } from '../src/background/commands';
+vi.mock('../src/content/island/island-controller', () => ({
+  createIslandController: () => ({
+    open: vi.fn(),
+    close: vi.fn(),
+    dispose: vi.fn(),
+  }),
+}));
 
 type Listener = Parameters<typeof chrome.runtime.onMessage.addListener>[0];
 let listeners: Set<Listener>;

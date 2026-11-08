@@ -30,6 +30,7 @@ for (const entry of ['background', 'content']) {
   await build({
     configFile: false,
     mode,
+    define: { 'process.env.NODE_ENV': JSON.stringify(mode) },
     build: {
       emptyOutDir: false,
       copyPublicDir: false,
