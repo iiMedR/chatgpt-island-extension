@@ -46,8 +46,8 @@ export default function App() {
         {label}
       </p>
       <p className="text-xs leading-relaxed text-muted">
-        Foundation preview. Floating conversations and AI responses are not
-        available yet.
+        Local conversations are available on ChatGPT. AI responses are not
+        connected yet.
       </p>
       <footer className="border-t border-outline pt-3 text-xs text-muted">
         Independent extension. Not affiliated with OpenAI.

@@ -2,15 +2,15 @@
 
 ## Milestone plan
 
-Prompts 01–04 were supplied. Milestones 01–03 below are historical checkpoints. Milestone 04 is implemented with unit and rendered-fixture evidence; Chrome integration verification remains pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–05 were supplied. Earlier milestone sections are historical checkpoints. Milestone 05 implements local conversation management with unit and rendered-fixture evidence; Chrome integration verification remains pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
 3. Keyboard shortcut and island trigger — implemented and automated verification passed; live Chrome testing pending.
 4. Floating island UI — implemented; partial verification status recorded below.
-5. Provider configuration and secure integration boundary — not started.
-6. AI requests, response display, cancellation, and errors — not started.
-7. Temporary follow-up conversation state — not started.
+5. Message composer and context management — implemented; verification recorded below.
+6. Real AI provider integration — not started (provisional plan).
+7. Provider/conversation refinement — not started (provisional plan).
 8. Theme, accessibility, and interaction refinement — not started.
 9. Security, regression, and browser compatibility verification — not started.
 10. Release packaging and distribution documentation — not started.
@@ -147,3 +147,43 @@ Implementation choices: the UI lives in `src/content/island`, with two React com
 Known limitations: the Chrome end-to-end and native pointer checks remain pending because the browser runtime cannot launch here. The last completed selection still uses the existing 80 ms debounce and semantic ChatGPT DOM/path assumptions. A closed island clears chat/draft but the selection manager retains its valid capture until lifecycle invalidation, permitting fresh reopen. Extremely short viewports may limit usable content space despite relaxed minimums. Host CSS isolation is implemented, but Shadow DOM is not a confidentiality boundary against the host page. AI responses remain unavailable; no Milestone 05 work has started.
 
 Status: **Partial** — implementation, unit tests, production assets, and rendered component previews are complete; unpacked Chrome/native interaction verification is explicitly outstanding.
+
+## Milestone 05 — message composer and context management
+
+- [x] Separate immutable SelectionContext with exact selected text, source URL, and the original capture timestamp, carried through the existing local trigger.
+- [x] Typed IslandConversation/ChatMessage/AIRequest/AIAdapter and idle/submitting/success/error snapshots; UUID conversation/message IDs.
+- [x] Dedicated field-whitelisted, immutable request builder: context once, ordered island history/current question, no host conversation reads.
+- [x] Replaceable local Promise-based mock adapter; constant labeled response, no network, keys, artificial delay, or website automation.
+- [x] Composer trimming, multiline/auto-height, Enter/Shift+Enter/IME behavior, normalized 8,000-unit limit with visible feedback, empty-send prevention, and success-only input clearing/refocus.
+- [x] Follow-ups preserve original context and completed local turns without duplicate context messages.
+- [x] Synchronous pending-request lock; read-only pending input; safe inline adapter errors; editable retained question and retry without a duplicated failed turn.
+- [x] AbortController plus request tickets invalidate pending results on close/context replacement; late success/failure cannot repopulate cleared or new state.
+- [x] Controller owns one manager per keyed chat; repeated identical shortcuts retain state/geometry; new context starts fresh.
+- [x] Near-bottom-only auto-scrolling respects a reader who scrolls upward.
+- [x] React text rendering; no persistence, text logging, external transmission, original-message edits, new permissions, or new dependencies.
+- [x] README workflow/manual checklist, architecture, current popup copy, and progress updated.
+- [x] Strict typecheck, lint, unit/DOM tests, production build, and formatting pass (results below).
+- [x] Conventional commit: `feat: implement island conversation management` (see Git history).
+- [ ] Actual unpacked Chrome load/shortcut/live ChatGPT verification; both Playwright cases remain blocked at Chromium process launch.
+
+Verification on 2026-11-08, Node 24.22.1:
+
+| Command/check          | Actual result                                                                                                                                                                           |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run typecheck`    | Passed                                                                                                                                                                                  |
+| `npm run lint`         | Passed after removing an unused test parameter                                                                                                                                          |
+| `npm run test`         | 144 tests passed across 11 files                                                                                                                                                        |
+| `npm run build`        | Passed; updated content IIFE includes the local conversation manager, request builder, mock adapter, React UI and embedded CSS                                                          |
+| `npm run format:check` | Passed after formatting                                                                                                                                                                 |
+| `npm run test:browser` | Retried both 1280 × 800 and 360 × 640 cases; both stopped before page load with Windows `spawn UNKNOWN`                                                                                 |
+| Rendered fixture       | Opera localhost-mapped production-bundle preview showed two questions/two labeled mock replies, one context and island, focused composer, original composer empty, and zero page errors |
+
+The 23 new tests cover blank/whitespace inputs; exact 8,000-unit boundaries and oversized editable drafts; question trimming; selected text/timestamp preservation; immutable request construction and exclusion of unrelated fields; ordered follow-ups; unique IDs; deterministic mock behavior and abort; duplicate pending sends; safe errors and edited/unchanged retries; empty adapter results; late success/rejection after disposal; fresh conversations; inline UI errors and success refocus; context replacement and actual next-request metadata; cleanup/host-page preservation; respectful scrolling; and safe literal text rendering. Existing shortcut, selection, window and style/build tests continue to pass. The trigger payload test now verifies the original capture timestamp. Playwright specs were extended with a follow-up turn but did not reach a page in this environment.
+
+Rendered evidence came from a separate synthetic local fixture with a mock runtime and only the supported-origin string mapped to localhost in a temporary copy of the production bundle. It is not a browser extension installation or real ChatGPT test. The fixture's accessibility tree showed one Selected context, ordered local turns, and four message articles; its status reported focused=true, originalEmpty=true and errors=0. Screenshot/harness artifacts are outside the repository. The actual Chrome load condition is therefore unverified rather than reported as passed.
+
+Architecture choices: a small per-session immutable manager is owned by the island controller and consumed through React useSyncExternalStore. This allows synchronous send locking and immediate disposal before unmount, avoiding cancellation gaps during context replacement without Redux/global state. Retry updates the unanswered failed tail, preserving its ID, rather than injecting the question twice. Request data remains local and snapshots cannot mutate UI history. No provider or network implementation was added; AbortSignal support prepares a replaceable boundary only.
+
+Known limitations and next steps: real Chrome/native shortcut integration remains pending because Chromium cannot spawn here. The default mock has no natural error/latency mode; injected test adapters cover failures and cancellation without adding product simulation controls. Length limits count normalized UTF-16 units; oversized drafts are rejected, not silently truncated. Selected context remains accessible in the scrollable conversation, with the same selection-manager debounce/lifecycle/semantic DOM assumptions as previous milestones. Closing clears island context/messages/draft but preserves the independent last valid capture for a fresh reopen. Future provider work requires a separately specified and authorized milestone; no Milestone 06 implementation has begun.
+
+Status: **Partial** — implementation and automated unit/build verification are complete, with rendered follow-up evidence; actual Chrome installation/integration remains explicitly unverified.

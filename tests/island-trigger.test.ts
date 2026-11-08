@@ -35,6 +35,7 @@ it('emits exactly one immutable payload for each valid request, locally only', (
     selectedText: selection.text,
     sourceUrl: selection.sourceUrl,
     triggeredAt: expect.any(Number),
+    capturedAt: selection.capturedAt,
   });
   expect(Object.isFrozen(onOpen.mock.calls[0][0])).toBe(true);
   trigger();

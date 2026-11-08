@@ -6,6 +6,7 @@ import { isSupportedUrl } from '../utils/isSupportedUrl';
 export interface IslandOpenPayload {
   readonly selectedText: string;
   readonly sourceUrl: string;
+  readonly capturedAt: number;
   readonly triggeredAt: number;
 }
 interface TriggerOptions {
@@ -47,6 +48,7 @@ export function createIslandTrigger(
         Object.freeze({
           selectedText: text.text,
           sourceUrl: selection.sourceUrl,
+          capturedAt: selection.capturedAt,
           triggeredAt: now,
         }),
       );

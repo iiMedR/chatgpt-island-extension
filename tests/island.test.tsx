@@ -2,7 +2,7 @@ import { act, fireEvent, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createIslandController } from '../src/content/island/island-controller';
 import { createIslandTrigger } from '../src/content/island-trigger';
-import { PLACEHOLDER_RESPONSE } from '../src/content/island/island-types';
+import { MOCK_RESPONSE } from '../src/content/island/conversation/mock-ai-adapter';
 import {
   fitWindow,
   initialWindow,
@@ -16,6 +16,7 @@ const payload = {
   selectedText: 'RAG grounds responses in relevant information.',
   sourceUrl: 'https://chatgpt.com/c/one',
   triggeredAt: 1,
+  capturedAt: 1,
 };
 const viewport = { x: 0, y: 0, width: 1200, height: 800 };
 beforeEach(() => {
@@ -61,7 +62,7 @@ it('opens from a valid trigger with selected context and focused composer', () =
   );
   expect(document.querySelector('[role="dialog"]')).toBeNull();
 });
-it('disables empty submission and adds one local question/placeholder with Enter', () => {
+it('disables empty submission and adds one local question/placeholder with Enter', async () => {
   const { ui } = open();
   const field = ui.getByRole('textbox');
   expect(ui.getByRole('button', { name: 'Send question' })).toBeDisabled();
@@ -69,10 +70,12 @@ it('disables empty submission and adds one local question/placeholder with Enter
   fireEvent.keyDown(field, { key: 'Enter' });
   expect(ui.queryByText('Development placeholder')).toBeNull();
   fireEvent.change(field, { target: { value: 'Explain this part.' } });
-  fireEvent.keyDown(field, { key: 'Enter' });
+  await act(async () => {
+    fireEvent.keyDown(field, { key: 'Enter' });
+  });
   expect(ui.getByText('Explain this part.')).toBeInTheDocument();
   expect(ui.getByText('Development placeholder')).toBeInTheDocument();
-  expect(ui.getByText(PLACEHOLDER_RESPONSE)).toBeInTheDocument();
+  expect(ui.getByText(MOCK_RESPONSE)).toBeInTheDocument();
   expect(field).toHaveValue('');
 });
 it('leaves Shift+Enter and IME Enter to native editing without submitting', () => {

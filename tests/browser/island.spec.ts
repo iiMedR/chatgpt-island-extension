@@ -115,7 +115,13 @@ for (const size of [
       await expect(input).toHaveValue('Explain this part.\nx');
       await input.press('Enter');
       await expect(dialog.getByText('Development placeholder')).toBeVisible();
-      await expect(dialog.getByText(/AI integration is coming/)).toBeVisible();
+      await expect(
+        dialog.getByText(/AI integration is not connected yet/),
+      ).toBeVisible();
+      await input.fill('How does retrieval help?');
+      await input.press('Enter');
+      await expect(dialog.getByText('Development placeholder')).toHaveCount(2);
+      await expect(dialog.getByText('How does retrieval help?')).toBeVisible();
       await input.fill('Retained draft');
       expect(await trigger()).toBe('triggered');
       await expect(input).toHaveValue('Retained draft');

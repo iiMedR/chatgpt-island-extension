@@ -4,17 +4,27 @@ import type { IslandOpenPayload } from '../island-trigger';
 import { Island } from './Island';
 import { observeTheme } from './theme';
 import css from './island.css?inline';
+import { createConversationManager } from './conversation/conversation-manager';
+import type { ConversationManager } from './conversation/conversation-manager';
+import type { AIAdapter } from './conversation/conversation-types';
+import { mockAIAdapter } from './conversation/mock-ai-adapter';
 
-export function createIslandController(document: Document) {
+export function createIslandController(
+  document: Document,
+  adapter: AIAdapter = mockAIAdapter,
+) {
   let host: HTMLElement | null = null;
   let root: Root | null = null;
   let stopTheme: (() => void) | null = null;
   let context: IslandOpenPayload | null = null;
+  let manager: ConversationManager | null = null;
   let previousFocus: HTMLElement | null = null;
   let session = 0;
   let focusVersion = 0;
   function close(restoreFocus = true) {
     const wasFocused = document.activeElement === host;
+    manager?.dispose();
+    manager = null;
     root?.unmount();
     root = null;
     stopTheme?.();
@@ -53,12 +63,21 @@ export function createIslandController(document: Document) {
           new URL(payload.sourceUrl).pathname
       ) {
         session++;
+        manager?.dispose();
+        manager = createConversationManager(
+          {
+            text: payload.selectedText,
+            sourceUrl: payload.sourceUrl,
+            capturedAt: payload.capturedAt,
+          },
+          adapter,
+        );
         context = payload;
       }
       root!.render(
         <Island
           session={session}
-          context={context}
+          manager={manager!}
           focusVersion={++focusVersion}
           onClose={() => close()}
         />,

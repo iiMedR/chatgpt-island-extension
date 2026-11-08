@@ -181,11 +181,19 @@ textarea:focus-visible {
   background: var(--foreground);
   color: var(--background);
 }
-.local-note {
+.composer-hint {
   font-size: 10px;
   text-align: center;
   color: var(--muted);
   margin-top: 7px;
+}
+.request-error {
+  font-size: 12px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--secondary);
+  color: var(--foreground);
 }
 .resize-handle {
   position: absolute;
@@ -207,8 +215,5 @@ textarea:focus-visible {
   }
   .composer-area {
     padding: 6px 12px;
-  }
-  .local-note {
-    display: none;
   }
 }
