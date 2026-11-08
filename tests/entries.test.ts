@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 afterEach(() => {
+  window.dispatchEvent(new Event('pagehide'));
   vi.unstubAllGlobals();
   vi.resetModules();
 });
@@ -11,7 +12,10 @@ it('registers the installation listener at worker startup', async () => {
 });
 it('responds to the running probe without changing page content', async () => {
   const addListener = vi.fn();
-  vi.stubGlobal('location', { origin: 'https://chatgpt.com' });
+  vi.stubGlobal('location', {
+    origin: 'https://chatgpt.com',
+    href: 'https://chatgpt.com/c/test',
+  });
   vi.stubGlobal('chrome', { runtime: { onMessage: { addListener } } });
   const original = document.documentElement.outerHTML;
   await import('../src/content/index');

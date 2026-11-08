@@ -22,4 +22,7 @@ it('ships popup, background, and standalone content assets', () => {
   ])
     expect(existsSync(`dist/${file}`)).toBe(true);
   expect(readFileSync('dist/content.js', 'utf8')).not.toMatch(/\bimport\s/);
+  expect(readFileSync('dist/content.js', 'utf8')).not.toContain(
+    'console.debug',
+  );
 });

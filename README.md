@@ -1,6 +1,6 @@
 # ChatGPT Island
 
-Independent Chrome extension foundation for exploring selected ChatGPT text in an isolated floating conversation. Not affiliated with OpenAI. Milestone 01 provides only installation, entry points, and a status popup.
+Independent Chrome extension for exploring selected ChatGPT text in an isolated floating conversation. Not affiliated with OpenAI. Milestone 02 adds assistant-response selection capture in memory to the foundation and status popup. The floating conversation is not implemented yet.
 
 ## Requirements and installation
 
@@ -36,4 +36,16 @@ Development uses disk builds rather than a remote Vite/HMR server: Chrome loads 
 
 ## Limitations
 
-No selection capture, keyboard shortcuts, floating island, AI requests, follow-up conversations, storage, analytics, or ChatGPT history changes. Chrome restricted pages may hide URL access and show the unsupported state. Icons are omitted; `public/icons` reserves a location for original assets. See PROGRESS.md for actual verification results.
+No keyboard shortcuts, floating island, AI requests, follow-up conversations, persistent storage, analytics, or ChatGPT history changes. Chrome restricted pages may hide URL access and show the unsupported state. Icons are omitted; `public/icons` reserves a location for original assets. See PROGRESS.md for actual verification results.
+
+## Manually test selection detection (Milestone 02)
+
+1. Run `npm run dev`, reload the unpacked extension, and refresh a ChatGPT conversation containing an assistant response. In ChatGPT DevTools enable Verbose/Debug messages; filter for `[ChatGPT Island] Selection`. Logs contain lifecycle labels and rejection reasons only, never selected text. Allow about 80 ms after selecting.
+2. Drag over assistant prose, bold text, list items, or code. Expect `detected` and `validated`. Leading/trailing whitespace is trimmed; internal whitespace is retained. A range may cross Markdown elements within one response.
+3. Use Shift+Arrow (or Shift+click, with keyboard caret browsing enabled if needed) to change a selection inside the same response. Expect validation. Normal selection, copy, scrolling, and typing should remain unaffected.
+4. Select whitespace or more than 10,000 trimmed UTF-16 code units. Expect `rejected` with `empty` or `oversized`. Exactly 10,000 is allowed. Select user text, sidebar text, composer/search text, or across messages: expect rejection. Input-native selections may appear as an empty document selection and are never read from input values.
+5. After a valid capture, collapse the selection or click elsewhere. Expect rejection of the empty selection and no `cleared` event: the last valid capture is retained. The automated lifecycle test verifies the retained value directly; no production text-inspection endpoint is exposed.
+6. Navigate to another conversation using the sidebar, New chat, and Back/Forward. Expect `cleared` immediately through navigation events or within one second through the URL safety check. An unchanged old DOM range is ignored until the selection changes. Hash/query changes alone keep the selection.
+7. Refresh or leave the page: state is cleared. Back/Forward cache restoration starts empty. Inspect DevTools Network and storage: selection capture creates neither requests nor persistent records. Run `npm run build` and reload to confirm selection diagnostics disappear in production.
+
+These are manual instructions, not claims of completed real-ChatGPT integration tests. ChatGPT markup varies; inspect the selected element's ancestry for `data-message-author-role="assistant"` or `article[data-turn="assistant"]`. Unknown markup is rejected rather than guessed from generated classes.
