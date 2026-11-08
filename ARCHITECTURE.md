@@ -8,7 +8,7 @@ Compatibility references: [Vite requirements](https://vite.dev/guide/), [Tailwin
 
 ## Execution contexts
 
-- Background: registers installation listener synchronously at module evaluation; development-only diagnostics. No timers, persistent state, or attempts to keep the worker alive.
+- Background: registers installation and Commands API listeners synchronously at module evaluation; development-only diagnostics. No polling, persistent selection state, or attempts to keep the worker alive. Each message has one bounded response-timeout timer, cleared on completion.
 - Content: declaratively injected at document idle on the exact HTTPS ChatGPT origin, in Chrome's default isolated world. Owns a selection manager and the existing content-running ping responder. Reads only explicitly selected assistant-response text and validates its DOM ancestry. Does not modify the host DOM or read input values.
 - Popup: short-lived React document. Queries the active tab on mount, checks exact URL origin, handles missing tabs/URLs and rejected API calls. Async updates are cancelled on unmount. Ready means supported origin only.
 - Future island: intentionally unimplemented. Its eventual UI and temporary state belong in a separate module rather than in popup or worker lifetime.
@@ -17,9 +17,9 @@ Only directories with current responsibilities exist. Shared components, hooks, 
 
 ## Permissions and communication
 
-Only `activeTab` is requested. Opening the action gives temporary access to the active tab's URL. No `tabs`, storage, scripting, broad host, AI host, or incognito permission. Static content injection is restricted to `https://chatgpt.com/*`.
+Only `activeTab` is requested. Opening the action or invoking a Commands API shortcut gives temporary access to the active tab's URL, per [Chrome's activeTab documentation](https://developer.chrome.com/docs/extensions/develop/concepts/activeTab). No `tabs`, storage, scripting, broad host, AI host, or incognito permission. Static content injection is restricted to `https://chatgpt.com/*`.
 
-The sole current message is `FOUNDATION_PING`, returning `{running:true}` from content to an extension caller. Future messages should use a discriminated TypeScript protocol with runtime payload validation, sender/origin checks, request identifiers, and explicit failures. Worker restarts must not destroy authoritative conversation state; keep temporary island state in its mounted context. Do not create a long-lived port just to defeat worker suspension.
+`shared/messages.ts` defines a discriminated protocol with runtime guards: `FOUNDATION_PING` returns `{running:true}`, and `ISLAND_OPEN_REQUEST` returns a fixed trigger status. Requests contain no selected text. Content accepts recognized, exact message shapes from the same extension ID. Responses are validated in the background. Future close/toggle variants can extend this union; add request identifiers when asynchronous conversations require correlation. Worker restarts must not destroy authoritative selection/conversation state; keep temporary island state in the content context. Do not create a long-lived port just to defeat worker suspension.
 
 ## Styling isolation
 
@@ -33,7 +33,21 @@ Only explicitly selected assistant text is read. No full-conversation collection
 
 ## Selection module (Milestone 02)
 
-`selection-dom.ts` owns native Selection/Range access and ancestry validation. `selection-validator.ts` is pure text validation: trim boundaries, reject empty text and text beyond 10,000 UTF-16 code units. Internal spacing is unchanged. `selection-types.ts` defines the immutable text/source URL/timestamp/source type record. `selection-manager.ts` owns event scheduling, state, and lifecycle. `getSelection()` is an internal, synchronous integration boundary for future content modules, not a runtime message exposing selected text. The current worker and popup receive no selection data.
+`selection-dom.ts` owns native Selection/Range access and ancestry validation. `selection-validator.ts` is pure text validation: trim boundaries, reject empty text and text beyond 10,000 UTF-16 code units. Internal spacing is unchanged. `selection-types.ts` defines the immutable text/source URL/timestamp/source type record. `selection-manager.ts` owns event scheduling, state, and lifecycle. `getSelection()` is the synchronous integration boundary used by the trigger controller, not a runtime message exposing selected text. The worker and popup receive no selected text.
+
+## Commands and island trigger (Milestone 03)
+
+The manifest declares the browser-scoped `open-island` command with suggested `Alt+Shift+E`, a valid Alt + optional Shift + letter combination under [Chrome's Commands API](https://developer.chrome.com/docs/extensions/reference/api/commands). No global command or DOM keyboard interception is added. Shortcut conflicts/OS bindings can prevent assignment or delivery. Installation/update checks use `commands.getAll()` and fixed development diagnostics; users customize their assignment at `chrome://extensions/shortcuts`. No preferences are changed automatically.
+
+`background/commands.ts` registers one listener per service-worker evaluation, with an idempotent registration guard. It prefers the optional `onCommand` tab and only queries `{active:true,currentWindow:true}` when no tab is provided. Unsupported/inactive tabs, unsupported pending navigations, missing IDs, and failed tab queries are rejected. A single typed request is sent with `{frameId:0}`. Missing receiver/API rejection, invalid responses, and a two-second unresponsive-channel timeout produce distinct safe statuses. The timeout exists only during that request and is cleared in `finally`; no polling/retry queue or background text cache exists. A timeout is an acknowledgement failure, not cancellation of an already delivered request; no retry avoids duplicate emission.
+
+`content/initialize.ts` owns the manager, message listener, and trigger callback. An extension-isolated-window disposal slot replaces a previous initialization, cleaning listeners, timers, and state. Non-cached pagehide disposes everything; BFCache pagehide uses the manager's existing clear/suspend rule. Invalidated runtime contexts return a fixed failure and dispose the manager when encountered. Reloading an extension can make its old receiver unreachable; the background handles this as a messaging failure and users refresh the ChatGPT tab. No code is dynamically injected to repair a missing content script.
+
+`content/island-trigger.ts` retrieves the existing capture locally. It never reselects current DOM text or flushes pending selection processing: an immediate shortcut within the existing 80 ms debounce may have no capture yet. It reuses pure text validation and validates source type, supported origin, current conversation path, and a finite nonfuture capture timestamp. Expiration remains lifecycle-based (navigation, explicit clear, pagehide/reload/disposal), with no conflicting age-based TTL. Missing/invalid state emits no callback and returns a typed status. A newly invalid page selection still preserves an earlier valid record according to Milestone 02.
+
+One successful request calls one typed `onOpen(IslandOpenPayload)` callback with immutable `{selectedText,sourceUrl,triggeredAt}` inside the content context. Repeated invocations may each call it once; no listeners are added per invocation. Callback exceptions become `handler-failed`, with no raw error/payload logging. The only current consumer is a development-only fixed **Island-open received** diagnostic. Production uses an empty consumer and still returns validation status; it does not mount anything. Milestone 04 can replace the callback with a React mount/focus controller without changing command routing or selection ownership. No DOM custom events, text-bearing runtime messages, external transmission, storage, UI, or prompt submission are introduced.
+
+## Selection lifecycle and DOM assumptions
 
 The manager debounces `selectionchange`, passive `mouseup`, and passive `keyup` for 80 ms, reads the live selection at processing time, and deduplicates unchanged captures. It never prevents default events. No MutationObserver or continuous document scan exists: dynamic responses are validated when selected. Only range-local elements and their ancestors are checked.
 
@@ -44,5 +58,7 @@ These semantic attributes are DOM assumptions, not an official ChatGPT contract.
 The most recent valid capture is held only in the content context; invalid/collapsed/outside selections preserve it. Origin/path changes invalidate it, including conversation/project routes; query/hash-only changes do not. `currententrychange` (when available) and `popstate` handle committed SPA navigation without patching History APIs. A one-second URL-only check covers missing/isolated-world events; every capture and getter also checks the URL. See [Chrome Navigation API documentation](https://developer.chrome.com/docs/web-platform/navigation-api). URL checks do not inspect page content. Same-path conversation switches, if introduced by ChatGPT, would require a revised lifecycle signal.
 
 Navigation cancels pending processing and remembers only weak endpoint references/offsets to reject an unchanged stale DOM selection without retaining old DOM trees. Pagehide clears and suspends capture; pageshow resumes after BFCache restoration. Non-BFCache pagehide disposes the manager. Disposal removes listeners, cancels timers, and clears the record; full reload/context destruction naturally drops memory. An explicit internal `clear()` follows the same invalidation rule. No text is stored in browser storage, sent through messaging, or transmitted externally. Development diagnostics contain only fixed lifecycle labels and rejection reasons; production removes the debug callback.
+
+## Future provider integration
 
 Future provider calls belong behind an explicit service boundary, with user consent for the selected context, minimal provider host access, bounded requests, abort handling, and safe errors. Never bundle API secrets or scrape ChatGPT session tokens/private endpoints. Credentials and provider choice need a separate design before implementation. This extension must not send into ChatGPT's composer or create history conversations.

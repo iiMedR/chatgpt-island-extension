@@ -2,12 +2,12 @@
 
 ## Milestone plan
 
-Prompts 01 and 02 were supplied. Milestones 03–10 below remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–03 were supplied. Milestone 04 is the floating island UI, as specified by Prompt 03; later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
-3. Shortcut and isolated floating shell — not started.
-4. Context preview and question composer — not started.
+3. Keyboard shortcut and island trigger — implemented and automated verification passed; live Chrome testing pending.
+4. Floating island UI — not started.
 5. Provider configuration and secure integration boundary — not started.
 6. AI requests, response display, cancellation, and errors — not started.
 7. Temporary follow-up conversation state — not started.
@@ -46,7 +46,7 @@ Manual Chrome verification has not been performed: the exposed desktop browser i
 
 ## Known issues and next step
 
-No browser-level verification yet. Readiness reports URL support only. Milestone 02 adds selection capture; the next proposed milestone is shortcut handling and the isolated floating shell. Milestone 03 has not started.
+No browser-level verification yet. Readiness reports URL support only. Milestone 03 adds the shortcut and local trigger; Milestone 04 will implement the floating island UI and has not started.
 
 ## Milestone 02 — text selection detection
 
@@ -67,3 +67,41 @@ No browser-level verification yet. Readiness reports URL support only. Milestone
 Verification on 2026-11-08: `npm run typecheck`, `npm run lint`, `npm run test` (51 tests in 4 files), `npm run build`, and `npm run format:check` passed. The suite now includes DOM fixtures and fake-timer lifecycle tests in addition to the foundation tests. Production content output is checked for standalone bundling and absence of `console.debug`. No packages or permissions were added. Initial verification caught a nullable-selection TypeScript error and an old test's incomplete URL mock; both were corrected before final verification.
 
 Status: **Complete for the implemented milestone and automated acceptance checks**; manual integration remains unverified. Fixture tests do not prove live ChatGPT behavior. DOM assumptions: semantic `data-message-author-role` or `article[data-turn]` ancestry, with unknown markup rejected. Limitations: UTF-16 length semantics, conservative rejection around embedded controls, up to one-second navigation fallback latency, path-based conversation identity, and stale identical ranges ignored after invalidation until selection changes. Chrome's Navigation API events may vary across isolated worlds; URL polling and access-time guards are included without patching browser APIs. Nothing from Milestone 03 is implemented.
+
+## Milestone 03 — keyboard shortcut and island trigger
+
+- [x] Manifest `open-island` command with suggested `Alt+Shift+E`, verified against Chrome's documented key requirements and generated manifest.
+- [x] Browser-scoped Commands API listener; supplied command tab preferred, active-tab fallback when absent.
+- [x] Reject unsupported/inactive/navigating-away tabs and invalid IDs without messaging them.
+- [x] Typed, runtime-validated background-to-top-frame request and status response; no text sent to background.
+- [x] Local selection retrieval reuses Milestone 02 validation and lifecycle expiration; no recapture or competing state/TTL.
+- [x] One immutable local payload/callback per valid request; repeated invocations supported without duplicate registration.
+- [x] Idempotent content initialization disposes prior listeners/timers and resets state.
+- [x] Safe statuses for missing/invalid selection, missing receiver, messaging/query failure, timeout, invalid response, context invalidation, and handler failure.
+- [x] Shortcut assignment checks on install/update and documented user customization/recovery.
+- [x] Temporary development handler logs only a fixed receipt label; production diagnostics removed.
+- [x] No floating UI, network calls, persistent storage, prompt submission, additional permissions, or dependencies.
+- [x] README, architecture, future-island notes, and progress updated.
+- [x] Typecheck, lint, 105 automated tests, production build, formatting, and generated-manifest inspection passed.
+- [x] Conventional commit: `feat: add keyboard shortcut for island trigger` (see Git history).
+- [ ] Manual Chrome shortcut assignment/delivery and real ChatGPT integration (not performed).
+
+Verification on 2026-11-08, Node 24.22.1:
+
+| Check                          | Actual result                                                                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run typecheck`            | Passed                                                                                                                                           |
+| `npm run lint`                 | Passed                                                                                                                                           |
+| `npm run test`                 | 105 tests passed across 7 files                                                                                                                  |
+| `npm run build`                | Passed; manifest, popup, worker, and standalone content assets generated                                                                         |
+| `npm run format:check`         | Passed                                                                                                                                           |
+| Generated `dist/manifest.json` | `commands.open-island.suggested_key.default` is `Alt+Shift+E`; permissions remain only `activeTab`; content matches only `https://chatgpt.com/*` |
+| Production runtime bundles     | Both worker and content pass assertions excluding `console.debug`                                                                                |
+
+Tests include mocked command events, tab fallback/validation, missing receiver, bounded timeout cleanup, malformed replies, assignment checks, local typed payloads, invalid/stale selections, missing/context-invalidated state, callback/channel failures, repeated initialization, and an in-process mocked background-to-content path proving one request produces one local receipt without text in messages/logs. These are unit/fixture tests, not real browser integration tests.
+
+Known limitations: Chrome/OS conflicts can leave the shortcut unassigned or prevent delivery. Refresh ChatGPT after extension reload/install to restore a reachable content script. The trigger uses the last completed capture, so pressing within the existing 80 ms debounce can return no-selection. Invalid new page selections intentionally retain an earlier valid record. Existing semantic DOM and path-based lifecycle assumptions remain. Production has no visual feedback or receipt logs; the README describes production breakpoints/status probing and a separate development-build handler check.
+
+Scope clarifications: the earlier provisional roadmap included a shell in Milestone 03; the supplied Prompt 03 places all floating UI in Milestone 04, and none was built. Selection expiration reuses existing navigation/page lifecycle rules instead of inventing an age TTL. The only new worker timer is a two-second per-message response deadline required for unresponsive receivers; it is cleared on completion and never drives retries. A timed-out acknowledgement cannot cancel a request already delivered. No API integration or Milestone 04 implementation has started.
+
+Status: **Complete for implementation and automated acceptance checks**, with manual Chrome verification explicitly pending. No browser integration success is claimed.

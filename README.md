@@ -1,6 +1,6 @@
 # ChatGPT Island
 
-Independent Chrome extension for exploring selected ChatGPT text in an isolated floating conversation. Not affiliated with OpenAI. Milestone 02 adds assistant-response selection capture in memory to the foundation and status popup. The floating conversation is not implemented yet.
+Independent Chrome extension for exploring selected ChatGPT text in an isolated floating conversation. Not affiliated with OpenAI. Milestone 03 adds a keyboard-triggered, local island-open request using the last captured assistant selection. The floating conversation is not implemented yet.
 
 ## Requirements and installation
 
@@ -36,7 +36,26 @@ Development uses disk builds rather than a remote Vite/HMR server: Chrome loads 
 
 ## Limitations
 
-No keyboard shortcuts, floating island, AI requests, follow-up conversations, persistent storage, analytics, or ChatGPT history changes. Chrome restricted pages may hide URL access and show the unsupported state. Icons are omitted; `public/icons` reserves a location for original assets. See PROGRESS.md for actual verification results.
+No floating island, AI requests, follow-up conversations, persistent storage, analytics, or ChatGPT history changes. Chrome restricted pages may hide URL access and show the unsupported state. Icons are omitted; `public/icons` reserves a location for original assets. See PROGRESS.md for actual verification results.
+
+## Shortcut usage and customization (Milestone 03)
+
+Highlight assistant-response text, allow the selection capture debounce (80 ms) to finish, and press **Alt+Shift+E** while Chrome has focus. The command retrieves the last valid capture, including after clicking elsewhere. Invalid new selections leave the previous valid capture available, as in Milestone 02. Refresh or switch conversations first when testing the no-selection case. Nothing opens visually in this milestone.
+
+Open `chrome://extensions/shortcuts`, find **ChatGPT Island → Explore the last selected assistant text**, and assign or customize the shortcut. Chrome may leave it blank if another extension owns it; operating-system/browser shortcuts may take priority. The extension never overwrites your assignment or installs a DOM keyboard fallback. On macOS, Alt is Option. See [Chrome's Commands API requirements](https://developer.chrome.com/docs/extensions/reference/api/commands). `chrome.commands.getAll()` in the worker console shows the actual assignment; a blank shortcut means unassigned.
+
+## Manually verify shortcut routing
+
+1. Run `npm run build`, open `chrome://extensions`, and reload the unpacked extension. Refresh `https://chatgpt.com` afterward so its content script belongs to the current extension context. Confirm the shortcut assignment at `chrome://extensions/shortcuts`.
+2. Open the service worker console through the extension card's **service worker** inspection link. In Sources, open `background.js`, pretty-print it, and set a breakpoint at `tabs.sendMessage`. Highlight assistant text, wait briefly, then press Alt+Shift+E. Confirm one send to the command tab's top frame, with only `{type:'ISLAND_OPEN_REQUEST'}`. Resume execution promptly. Breakpoints can cause the two-second response timeout, so use the development build below for less intrusive verification.
+3. Production logs and the temporary development handler are deliberately removed. To check a production content result directly, use the popup DevTools console on ChatGPT: `const [tab] = await chrome.tabs.query({active:true,currentWindow:true}); await chrome.tabs.sendMessage(tab.id, {type:'ISLAND_OPEN_REQUEST'}, {frameId:0})`. Expect `{status:'triggered'}` with a valid capture. This probe tests messaging/selection retrieval; the breakpoint test checks the actual shortcut path. Neither result contains selected text or claims a visible island exists.
+4. To observe the temporary handler itself, run `npm run dev`, wait for all three builds, reload the extension, and refresh ChatGPT. Enable Verbose/Debug in both consoles. Select assistant text and press the shortcut. Expect **Island-open received** once and **Trigger: triggered** in ChatGPT's content-script console, plus **Command: triggered** in the worker console. No selected text should appear. Repeated presses may each trigger once, with no UI.
+5. Refresh ChatGPT and press the shortcut without capturing valid text. Expect **no-selection**, no handler event, and no uncaught error. Try an invalid selection first (composer, sidebar, or user message) and repeat. After a previous valid capture, invalid new selections intentionally preserve it.
+6. Capture text, switch conversations, then press the shortcut: expect **no-selection**. On an unsupported website, expect **unsupported-tab** in the development worker console and no content handler event. No script is injected there.
+7. With ChatGPT open, reload the extension without refreshing the page and test again. A missing/invalidated receiver may report **messaging-failed**; refresh ChatGPT to recover. Disabled site access or tabs opened before installation can also have no receiver. An unresponsive receiver reports **response-timeout** after two seconds; no automatic retries occur.
+8. In a development install/update, a blank assignment produces **Shortcut: shortcut-unassigned**. Assign it manually; if the command never reaches the worker, check Chrome/OS shortcut conflicts and that Chrome has focus. Return to `npm run build` and reload when finished to restore the log-free production build.
+
+Manual Chrome integration tests have not been performed in this session. Unit tests use mocked Chrome APIs and DOM fixtures.
 
 ## Manually test selection detection (Milestone 02)
 

@@ -5,6 +5,12 @@ export const manifest: chrome.runtime.ManifestV3 = {
   description:
     'Explore selected ChatGPT text in an isolated floating conversation.',
   permissions: ['activeTab'],
+  commands: {
+    'open-island': {
+      suggested_key: { default: 'Alt+Shift+E' },
+      description: 'Explore the last selected assistant text',
+    },
+  },
   action: { default_popup: 'src/popup/index.html' },
   background: { service_worker: 'background.js', type: 'module' },
   content_scripts: [

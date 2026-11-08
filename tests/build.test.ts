@@ -8,7 +8,12 @@ it('limits permissions and injection scope', () => {
     'https://chatgpt.com/*',
   ]);
   expect(manifest.host_permissions).toBeUndefined();
-  expect(manifest.commands).toBeUndefined();
+  expect(manifest.commands).toEqual({
+    'open-island': {
+      suggested_key: { default: 'Alt+Shift+E' },
+      description: expect.any(String),
+    },
+  });
 });
 it('ships popup, background, and standalone content assets', () => {
   const built = JSON.parse(
@@ -23,6 +28,9 @@ it('ships popup, background, and standalone content assets', () => {
     expect(existsSync(`dist/${file}`)).toBe(true);
   expect(readFileSync('dist/content.js', 'utf8')).not.toMatch(/\bimport\s/);
   expect(readFileSync('dist/content.js', 'utf8')).not.toContain(
+    'console.debug',
+  );
+  expect(readFileSync('dist/background.js', 'utf8')).not.toContain(
     'console.debug',
   );
 });

@@ -6,7 +6,10 @@ afterEach(() => {
 });
 it('registers the installation listener at worker startup', async () => {
   const addListener = vi.fn();
-  vi.stubGlobal('chrome', { runtime: { onInstalled: { addListener } } });
+  vi.stubGlobal('chrome', {
+    runtime: { onInstalled: { addListener } },
+    commands: { onCommand: { addListener: vi.fn() } },
+  });
   await import('../src/background/index');
   expect(addListener).toHaveBeenCalledOnce();
 });
@@ -16,7 +19,12 @@ it('responds to the running probe without changing page content', async () => {
     origin: 'https://chatgpt.com',
     href: 'https://chatgpt.com/c/test',
   });
-  vi.stubGlobal('chrome', { runtime: { onMessage: { addListener } } });
+  vi.stubGlobal('chrome', {
+    runtime: {
+      id: 'test-extension',
+      onMessage: { addListener, removeListener: vi.fn() },
+    },
+  });
   const original = document.documentElement.outerHTML;
   await import('../src/content/index');
   const listener = addListener.mock.calls[0][0] as (
@@ -25,7 +33,7 @@ it('responds to the running probe without changing page content', async () => {
     respond: (value: unknown) => void,
   ) => void;
   const respond = vi.fn();
-  listener({ type: 'FOUNDATION_PING' }, {}, respond);
+  listener({ type: 'FOUNDATION_PING' }, { id: 'test-extension' }, respond);
   expect(respond).toHaveBeenCalledWith({ running: true });
   respond.mockClear();
   listener(null, {}, respond);
