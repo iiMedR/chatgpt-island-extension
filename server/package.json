@@ -1,6 +1,6 @@
 {
   "name": "chatgpt-island-server",
-  "version": "0.9.5",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -9,11 +9,16 @@
   "scripts": {
     "dev": "node --env-file-if-exists=.env --import tsx src/index.ts",
     "start": "node --env-file-if-exists=.env dist/server/src/index.js",
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "tsc -p vendor/siwc-local/tsconfig.json && tsc -p tsconfig.json",
+    "typecheck": "tsc -p vendor/siwc-local/tsconfig.json && tsc -p tsconfig.json --noEmit",
+    "sdk:build": "tsc -p vendor/siwc-local/tsconfig.json"
   },
   "dependencies": {
+    "@siwc/local": "file:vendor/siwc-local",
     "fastify": "^5.12.8",
     "openai": "^7.53.0"
+  },
+  "devDependencies": {
+    "@types/proper-lockfile": "^4.1.4"
   }
 }

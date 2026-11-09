@@ -1,8 +1,10 @@
 import { createApp } from './app.js';
 import { loadConfig, ConfigurationError } from './config.js';
+import { createPlanService } from './chatgpt-service.js';
 try {
   const config = loadConfig();
   const app = createApp(config, {
+    plan: createPlanService(),
     diagnostic: (code, status) =>
       console.warn(
         JSON.stringify({ event: 'ai_request_failed', code, status }),

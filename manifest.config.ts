@@ -8,7 +8,7 @@ export const manifest: chrome.runtime.ManifestV3 = {
   version,
   version_name: `${version} Developer Preview`,
   description:
-    'Developer preview: explore selected ChatGPT text in a floating AI chat. Requires a local backend and paid API setup.',
+    'Explore selected ChatGPT text in a floating chat using your authorized ChatGPT plan. Requires the local helper.',
   icons: {
     16: 'icons/icon-16.png',
     32: 'icons/icon-32.png',

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isSupportedUrl } from '../utils/isSupportedUrl';
 import { handleCommand, RESPONSE_TIMEOUT_MS } from '../background/commands';
+import { ChatGPTAccount } from './ChatGPTAccount';
 type Status = 'checking' | 'ready' | 'unsupported' | 'refresh' | 'error';
 const messages: Record<string, string> = {
   triggered: 'Island opened. Close this popup to use it.',
@@ -148,7 +149,7 @@ export default function App() {
     <main className="w-80 space-y-5 p-5">
       <header className="space-y-2">
         <h1 className="text-lg font-semibold tracking-tight">
-          ChatGPT Island <small>0.9.5</small>
+          ChatGPT Island <small>0.10.0</small>
         </h1>
         <p className="text-sm text-muted">
           Explore selected text without leaving your conversation.
@@ -191,11 +192,7 @@ export default function App() {
           </pre>
         </section>
       ) : null}
-      <p className="text-xs leading-relaxed text-muted">
-        Developer preview. OAuth sign-in is not implemented. AI answers require
-        the local backend and OpenAI API setup; opening the island does not
-        require the backend.
-      </p>
+      <ChatGPTAccount />
       <footer className="border-t border-outline pt-3 text-xs text-muted">
         Independent extension. Not affiliated with OpenAI.
       </footer>

@@ -1,5 +1,7 @@
 # Architecture
 
+**0.10.0 runtime update:** the normal helper now uses the official local ChatGPT-plan OAuth provider, not the legacy API-key adapter described in earlier milestone sections. Credentials use Windows DPAPI; conversation data remains temporary. See docs/CHATGPT_SIGN_IN.md for the current architecture and verification limits. Earlier milestone assessments are historical.
+
 ## Build and execution contexts
 
 Manifest V3, React 19, strict TypeScript 6.0, Vite 7, Tailwind 4, Vitest, ESLint 10 and Node 24. The TypeScript manifest emits the popup, module worker and ChatGPT-only content IIFE. React and inline island CSS are bundled locally, without remote scripts or relaxed CSP. A separate server package contains Fastify and the official OpenAI SDK; neither is bundled into the extension.

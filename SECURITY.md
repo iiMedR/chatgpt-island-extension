@@ -1,5 +1,7 @@
 # Security policy
 
+**0.10.0 runtime update:** the normal helper now uses the official local ChatGPT-plan OAuth provider, not the legacy API-key adapter described in earlier milestone sections. Credentials use Windows DPAPI; conversation data remains temporary. See docs/CHATGPT_SIGN_IN.md for the current architecture and verification limits. Earlier milestone assessments are historical.
+
 ## Supported environment and scope
 
 This repository is a local development prototype: Node.js 24 LTS, current desktop Chrome, unpacked Manifest V3 extension, and backend bound to 127.0.0.1:8787. It is not approved for public deployment or Chrome Web Store distribution. Scope includes src/, server/src/, build configuration and tests. This file records engineering security requirements; it does not grant permission to execute code, access secrets or disclose private data.

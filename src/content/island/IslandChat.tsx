@@ -102,8 +102,9 @@ export function IslandChat({
           <section className="consent" aria-label="AI data sharing consent">
             <p>
               Submitting sends the selected text, your question and recent
-              island history through your local backend to OpenAI. API usage may
-              cost money. OpenAI retention policies apply.
+              island history through your local helper to OpenAI using your
+              authorized ChatGPT plan. Plan limits and OpenAI retention policies
+              apply.
             </p>
             <label>
               <input

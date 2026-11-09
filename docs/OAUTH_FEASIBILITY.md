@@ -1,4 +1,6 @@
-# OAuth feasibility — Milestone 11
+# OAuth feasibility — Milestone 11 (historical)
+
+Superseded for the explicitly requested personal Windows local-runtime integration in 0.10.0. See CHATGPT_SIGN_IN.md and PROGRESS.md for implementation and live verification limits; this original report remains an assessment of the earlier build.
 
 Assessed 2026-11-09 against fetched official OpenAI/Chrome documentation and the 0.9.0 repository. **Outcome: feasibility-only; no authentication migration implemented.**
 

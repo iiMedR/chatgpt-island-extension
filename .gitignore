@@ -7,3 +7,5 @@ coverage/
 !.env.example
 *.local
 releases/
+
+server/vendor/siwc-local/lib/

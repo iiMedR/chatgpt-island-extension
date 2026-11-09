@@ -5,9 +5,9 @@ export const MAX_HISTORY_CHARACTERS = 30000;
 export const MAX_HISTORY_MESSAGES = MAX_COMPLETED_HISTORY_MESSAGES + 1;
 export const MAX_TOTAL_CHARACTERS = 10000 + 8000 + MAX_HISTORY_CHARACTERS;
 export const MAX_ANSWER_LENGTH = 16000;
-export const BACKEND_DEADLINE_MS = 25000;
-export const RELAY_DEADLINE_MS = 28000;
-export const CLIENT_DEADLINE_MS = 30000;
+export const BACKEND_DEADLINE_MS = 180000;
+export const RELAY_DEADLINE_MS = 185000;
+export const CLIENT_DEADLINE_MS = 190000;
 export const MOCK_TEXTS = [
   'AI integration is not connected yet. Your question and selected text are ready to be sent to an AI provider.',
   'AI integration is coming in a future milestone. Your question and selected text have been captured locally.',
@@ -21,6 +21,12 @@ export interface ChatRequest {
   messages: WireMessage[];
 }
 export const AI_ERRORS = {
+  sign_in_required:
+    'Open the extension popup and choose Continue with ChatGPT.',
+  plan_not_enabled:
+    'ChatGPT plan access is not enabled. Reconnect through the extension popup and allow plan usage.',
+  plan_limit:
+    'Your ChatGPT plan usage limit was reached. Manage usage in ChatGPT settings or try later.',
   busy: 'The local AI backend is busy. Wait for another request to finish, then retry.',
   backend_unavailable:
     "Couldn't connect to the AI service. Check that the local backend is running.",

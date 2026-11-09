@@ -11,6 +11,7 @@ import {
   MAX_HISTORY_MESSAGES,
   MAX_TOTAL_CHARACTERS,
   MOCK_TEXTS,
+  CLIENT_DEADLINE_MS,
 } from '../src/shared/ai-contract';
 import { registerAIRelay } from '../src/background/ai-relay';
 function event<T>() {
@@ -151,7 +152,7 @@ it('handles backend/worker unavailability, empty output and explicit timeout', a
   vi.useFakeTimers();
   result = createOpenAIAdapter().generateResponse(request);
   assertion = expect(result).rejects.toThrow(AI_ERRORS.timeout);
-  await vi.advanceTimersByTimeAsync(30000);
+  await vi.advanceTimersByTimeAsync(CLIENT_DEADLINE_MS);
   await assertion;
   expect(vi.getTimerCount()).toBe(0);
 });

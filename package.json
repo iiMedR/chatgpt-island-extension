@@ -1,6 +1,6 @@
 {
   "name": "chatgpt-island",
-  "version": "0.9.5",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "tsx scripts/build.ts --watch",
     "build": "tsx scripts/build.ts && npm --prefix server run build",
-    "typecheck": "tsc --noEmit && npm --prefix server run typecheck",
+    "typecheck": "npm --prefix server run typecheck && tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "npm --prefix server run sdk:build && vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:browser": "npm run build:offline && playwright test",
