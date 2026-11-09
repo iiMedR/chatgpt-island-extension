@@ -29,6 +29,10 @@ function setup(adapter?: AIAdapter) {
   return { shadow, ui: within(shadow.querySelector('div')!) };
 }
 async function send(ui: ReturnType<typeof within>, text: string) {
+  const consent = ui.queryByRole('checkbox', {
+    name: 'Allow AI processing for this temporary conversation',
+  });
+  if (consent) fireEvent.click(consent);
   fireEvent.change(ui.getByRole('textbox'), { target: { value: text } });
   await act(async () => {
     fireEvent.keyDown(ui.getByRole('textbox'), { key: 'Enter' });
@@ -231,6 +235,11 @@ it('does not steal focus from the page or header when a delayed answer arrives',
   document.body.append(outside);
   const pending = pendingResponse();
   const { ui } = setup({ kind: 'ai', generateResponse: () => pending.promise });
+  fireEvent.click(
+    ui.getByRole('checkbox', {
+      name: 'Allow AI processing for this temporary conversation',
+    }),
+  );
   fireEvent.change(ui.getByRole('textbox'), { target: { value: 'Question' } });
   fireEvent.keyDown(ui.getByRole('textbox'), { key: 'Enter' });
   outside.focus();
@@ -250,4 +259,38 @@ it('retains moved geometry and long plain-text content across question and answe
   expect(dialog.getAttribute('style')).toBe(geometry);
   act(() => controller!.open(payload));
   expect(dialog.getAttribute('style')).toBe(geometry);
+});
+
+it('requires affirmative AI consent before send/Enter, retaining it only for this conversation', async () => {
+  const generateResponse = vi.fn(async () => 'Answer after consent');
+  const { ui } = setup({ kind: 'ai', generateResponse });
+  const input = ui.getByRole('textbox');
+  fireEvent.change(input, { target: { value: 'Question' } });
+  expect(ui.getByRole('button', { name: 'Send question' })).toBeDisabled();
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(generateResponse).not.toHaveBeenCalled();
+  expect(
+    ui.getByText(/Submitting sends the selected text/),
+  ).toBeInTheDocument();
+  fireEvent.click(
+    ui.getByRole('checkbox', {
+      name: 'Allow AI processing for this temporary conversation',
+    }),
+  );
+  await act(async () => fireEvent.keyDown(input, { key: 'Enter' }));
+  expect(generateResponse).toHaveBeenCalledOnce();
+  act(() => controller!.open(payload));
+  expect(ui.queryByRole('checkbox')).toBeNull();
+  act(() =>
+    controller!.open({ ...payload, selectedText: 'Different reference' }),
+  );
+  expect(ui.getByRole('checkbox')).not.toBeChecked();
+  fireEvent.click(ui.getByRole('button', { name: 'Close island' }));
+  act(() => controller!.open(payload));
+  const shadow = document.querySelector(
+    '[data-chatgpt-island-root]',
+  )!.shadowRoot!;
+  expect(
+    within(shadow.querySelector('div')!).getByRole('checkbox'),
+  ).not.toBeChecked();
 });

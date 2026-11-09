@@ -78,6 +78,11 @@ it('runs fixture selection, command, React UI, validated backend and follow-up w
     )!;
     const ui = within(host.shadowRoot!.querySelector('div')!);
     expect(host.shadowRoot!.activeElement).toBe(ui.getByRole('textbox'));
+    fireEvent.click(
+      ui.getByRole('checkbox', {
+        name: 'Allow AI processing for this temporary conversation',
+      }),
+    );
     for (const question of ['Explain simply', 'Give an example']) {
       fireEvent.change(ui.getByRole('textbox'), {
         target: { value: question },

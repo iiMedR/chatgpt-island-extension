@@ -146,6 +146,24 @@ blockquote {
   overscroll-behavior: contain;
   padding: 12px 16px 10px;
 }
+.consent {
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.consent label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0;
+}
+.consent input {
+  flex-shrink: 0;
+  accent-color: var(--foreground);
+}
 .composer {
   display: flex;
   align-items: flex-end;

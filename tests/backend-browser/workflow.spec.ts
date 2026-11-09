@@ -164,6 +164,10 @@ async function select(id = 'selection') {
   expect(await trigger()).toBe('triggered');
 }
 async function send(question: string) {
+  const consent = page.getByRole('checkbox', {
+    name: 'Allow AI processing for this temporary conversation',
+  });
+  if (await consent.count()) await consent.check();
   const input = page.getByRole('textbox', {
     name: 'Ask about the selected text',
   });

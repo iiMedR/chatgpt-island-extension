@@ -46,8 +46,8 @@ export default function App() {
         {label}
       </p>
       <p className="text-xs leading-relaxed text-muted">
-        AI explanations require the local backend. OpenAI API usage may incur
-        charges.
+        Developer preview. AI explanations require the local backend. OpenAI API
+        usage may incur charges.
       </p>
       <footer className="border-t border-outline pt-3 text-xs text-muted">
         Independent extension. Not affiliated with OpenAI.

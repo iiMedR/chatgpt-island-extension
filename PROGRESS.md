@@ -2,7 +2,7 @@
 
 ## Milestone plan
 
-Prompts 01–09 were supplied. Earlier sections are historical checkpoints. Milestone 09 audits and hardens the existing implementation, dependencies and verification; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–10 were supplied. Earlier sections are historical checkpoints. Milestone 10 prepares a controlled 0.9.0 developer-preview package and release drafts; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
@@ -13,7 +13,7 @@ Prompts 01–09 were supplied. Earlier sections are historical checkpoints. Mile
 7. Follow-up conversations and context optimization — implemented; automated evidence and remaining manual checks below.
 8. Floating window UX and interaction polish — implemented; automated evidence and browser limitations below.
 9. Testing, security and reliability — implemented; Partial due browser/live integration and distribution blockers below.
-10. Release packaging and distribution documentation — not started.
+10. Developer-preview packaging and release preparation — implemented; public release blocked and live verification pending below.
 
 ## Milestone 01 checklist
 
@@ -347,3 +347,57 @@ Outdated-major assessment: newer jest-dom, Chrome/Node types, React Vite plugin,
 Release decision: **not Chrome Web Store/public-backend ready**. Local development can continue under documented trusted-machine assumptions. Before Milestone 10 packaging, obtain running-browser evidence (including the mock backend transport cases), decide how users securely provision/authenticate a local backend, review cost/privacy disclosures and provider handling, configure maintainer reporting, and run hosted CI. No additional API calls, public infrastructure, accounts, payments or packaging were implemented.
 
 Final regression additions explicitly test overlapping command calls targeting two different supplied ChatGPT tab IDs without fallback queries, plus all three instruction-like reference examples (ignore instructions / reveal prompt / send conversation elsewhere) remaining separate user-reference data. A targeted sandbox run stopped before collection because Vitest's temporary-cache rename returned EPERM; the final full suite outside that sandbox passed all 218 tests. This environmental failure is not reported as a test pass.
+
+## Milestone 10 — 0.9.0 developer-preview release preparation
+
+Release type: **Developer Preview (Option A)**. No secure hosted backend or deployment exists, so localhost architecture is preserved. Overall status: **Partial** for complete runtime/browser verification; developer-preview packaging/documentation are implemented, and public release is **blocked**. No upload, publication, deployment, registration fee, tag or push was performed. Earlier sections are historical milestone evidence.
+
+Implemented:
+
+- Consistent 0.9.0 project/backend/lockfile/manifest version, Developer Preview version_name, accurate setup-required description, popup/README labeling and CHANGELOG without invented prior releases.
+- Original provisional neutral raster icons generated deterministically at 16/32/48/128 px, registered for manifest/action, with transparent padding and no proprietary logo. 128 px was visually inspected; final branding/name approval remains unverified. Removed obsolete public/icons/.gitkeep after the package allowlist correctly rejected its copied output.
+- Explicit unchecked AI submission consent, separate from send. It names selected text/question/recent history, localhost/OpenAI, costs and provider retention. The sole preference is an in-memory boolean for the keyed temporary conversation, retained for same-selection refocus and cleared on close/new selection. No new permission/browser storage or automatic API request. Consent acceptance returns focus to the composer. Existing offline mock mode makes no provider requests.
+- Production/openai-only build metadata guard and narrow archive allowlist. Manifest/runtime/popup references, icon PNG dimensions, empty/oversized files, unwanted source/test/env/map files and secret/SDK/development markers are checked before packaging. Archive entries are bounded/path-validated before clean extraction. Third-party React/ReactDOM/Tailwind license notices are included from installed locked dependencies. The repository's own external-distribution licensing decision still needs human approval; no license is invented.
+- Sorted deterministic ZIP entries/canonical archive metadata and SHA-256; no source or Git timestamps are changed. Determinism is scoped to identical built inputs and verified locally, not a guarantee across every OS/compiler version. Generated releases/ and dist/ are intentionally Git-ignored; generators, tests, locked versions, source/docs and CI changes are committed.
+- package:preview rebuilds production and writes the extension-only ZIP, checksums, file list and notes. verify:package checks the hash, unpacks to a fresh checked temporary directory, verifies asset bytes/manifest-at-root, then cleans up. The ZIP neither installs nor deploys the separately configured backend.
+- Privacy policy, store listing, screenshot plan, PASS/FAIL/NOT VERIFIED checklist, manual submission guide, actionable production-readiness plan and release notes in docs/. README/ARCHITECTURE/SECURITY/TESTING updated for actual preview/consent/package behavior. CI packages and verifies only after its checks/browser stages; no remote CI run is claimed.
+
+Official Chrome policies and current preparation/publication/listing/image/account guidance were reviewed on 2026-11-09. The official Education category exists and is recommended for this explanation/learning tool, subject to dashboard/owner review. Single purpose, disclosure/consent, minimal access, packaged code, third-party processing, name/branding, actual screenshots, privacy URL and setup/cost requirements are reflected in drafts. Compliance is **not certified**: public operator/contact/policy URL, authenticated backend provisioning, pre-installation disclosure/security review (including loopback HTTP) and reviewer approval remain unresolved. References are linked in docs; no public URL/email or actual account state is invented.
+
+### Verification evidence
+
+Final actual command results, ZIP size/hash, file list and Git status are recorded below after the final package run. New tests cover numeric/preview version consistency, all icon sizes, deterministic archive/readback, allowlisting/missing/tampered/secret content, rejection of mock/development builds and consent send/Enter/lifecycle. Existing local integration/security/backend tests remain applicable. An initial manifest read using import.meta.url failed under jsdom's virtual URL; it now reads the repository-root package file, matching the documented root execution directory. Initial package rejection of .gitkeep was resolved by deleting the obsolete placeholder. Both were caught and fixed rather than hidden.
+
+Both browser suites were attempted again: six offline UI viewport cases and three exclusive mock-HTTP cases stopped before page load with Windows spawn UNKNOWN. No new application screenshots, native extracted-extension loading or real API answer is claimed. No paid requests or real credentials were used. Screenshot instructions explicitly require genuine future captures and prohibit presenting mock responses as real AI output.
+
+### Remaining blockers and conclusion
+
+| Severity | Unresolved issue                                                                                                                                          | Next action                                                                                        |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Critical | No unresolved critical source defect confirmed in reviewed paths; not proof of absence                                                                    | Retain independent review and repeat checks after changes                                          |
+| High     | No secure consumer-accessible backend or authenticated local provisioning; current loopback process trusts local clients and has no per-user spend quotas | Execute docs/PRODUCTION_READINESS_PLAN.md before public distribution; do not expose current server |
+| Medium   | Browser/ChatGPT/native shortcut/live API verification, extracted Chrome load and hosted CI unverified                                                     | Run documented scenarios on working Chrome with separately authorized live API checks              |
+| Medium   | Public policy URL/contact/operator identity, privacy/cost/security review and genuine screenshots missing                                                 | Complete responsible-owner review and publish accurate documentation only with authorization       |
+| Low      | Provisional icon/name, project licensing and manual accessibility/zoom/contrast approval pending                                                          | Obtain human branding/licensing review and actual assistive-technology/visual evidence             |
+
+Developer-preview ZIP is for controlled local technical evaluation with documented limitations. **Developer preview ready — public release blocked.** This conclusion concerns the prepared artifact, not a claim of fully verified runtime behavior or store acceptance. No further milestone, public backend, publishing action or Git tag was started.
+
+### Final automated/package results (2026-11-09)
+
+| Command/check                                  | Actual result                                                                                                                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| npm run typecheck                              | Passed; includes backend equivalent                                                                                                                          |
+| npm run lint                                   | Passed                                                                                                                                                       |
+| npm run test                                   | 224 tests passed across 19 files; real providers mocked, public fetch guarded                                                                                |
+| npm run build / package:preview                | Production extension and backend compile; package generator passed                                                                                           |
+| npm run verify:package                         | ZIP checksum, clean temporary extraction, root manifest and all runtime byte comparisons passed                                                              |
+| npm audit / server npm audit                   | Both exited 0, zero advisories, including development ZIP dependency                                                                                         |
+| npm run test:browser                           | 6 cases stopped before page load with Windows spawn UNKNOWN                                                                                                  |
+| npm run test:backend-browser                   | 3 cases stopped before page load with Windows spawn UNKNOWN                                                                                                  |
+| Live API / extracted Chrome load / screenshots | NOT VERIFIED; no paid calls or real product captures                                                                                                         |
+| Production manifest                            | JSON parsed; MV3, 0.9.0 + Developer Preview, module worker, ChatGPT-only content, correct command/popup/icons, activeTab and loopback only, no CSP weakening |
+| Secret scan                                    | Built with synthetic server-key canary; client/package marker/key-pattern scans passed; no backend/env/test/map/node_modules/.git files in ZIP               |
+
+Artifact: releases/chatgpt-island-v0.9.0.zip. The authoritative final checksum/size is in releases/SHA256SUMS.txt and the package command output; this avoids stale copied hashes when rebuilding. Its complete verified file list is in releases/FILE_LIST.txt: manifest.json, background.js, content.js, the runtime popup HTML and its compiled JS/CSS assets, four PNG icons and THIRD_PARTY_NOTICES.txt (11 files). releases/RELEASE_NOTES.md is a separate companion copied from tracked docs/RELEASE_NOTES.md. Generated artifacts are intentionally ignored, not omitted accidentally from Git. No backend installer/service is present.
+
+Release drafts are complete as drafts; final screenshot images, hosted policy/contact URLs, account eligibility, name/branding/licensing and public authorization are FAIL or NOT VERIFIED in the checklist. The first archive generation attempt failed on an obsolete .gitkeep, and initial artifact test imports failed on a virtual jsdom URL; both were fixed and all 224 tests then passed. The final formatting check initially flagged manifest.config.ts; formatting was corrected and checked again. No unresolved functional test failure is hidden. Browser startup failures remain unresolved environmental evidence, not passes.

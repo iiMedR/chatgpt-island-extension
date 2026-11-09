@@ -1,7 +1,8 @@
 import { build, mergeConfig } from 'vite';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile, readFile } from 'node:fs/promises';
 import config from '../vite.config';
 import { manifest } from '../manifest.config';
+import { writeIcons } from './icons';
 const watch = process.argv.includes('--watch');
 const offline = process.argv.includes('--offline');
 const mockBackend = process.argv.includes('--mock-backend');
@@ -21,6 +22,7 @@ await build(
           await writeFile(
             'dist/build-info.json',
             JSON.stringify({
+              buildMode: mode,
               aiMode: offline
                 ? 'mock'
                 : mockBackend
@@ -28,6 +30,14 @@ await build(
                   : 'openai',
             }),
           );
+          await writeIcons('dist/icons');
+          const notices = await Promise.all(
+            ['react', 'react-dom', 'tailwindcss'].map(
+              async (name) =>
+                `${name}\n${await readFile(`node_modules/${name}/LICENSE`, 'utf8')}`,
+            ),
+          );
+          await writeFile('dist/THIRD_PARTY_NOTICES.txt', notices.join('\n\n'));
           await writeFile(
             'dist/manifest.json',
             JSON.stringify(manifest, null, 2),

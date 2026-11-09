@@ -37,3 +37,9 @@ No dedicated private reporting address is configured. Use the repository host's 
 ## Verification limits
 
 See TESTING.md and PROGRESS.md for dated evidence. Automated mocks are not proof of live ChatGPT DOM compatibility, native shortcut behavior, provider quality, public-service security, complete accessibility or absence of all vulnerabilities. The Milestone 09 formal scan launcher rejected scope before a scan was created; the implementation audit is source/test-backed, with no sealed Codex Security report claimed.
+
+## Developer-preview consent and package boundary (0.9.0)
+
+Real AI UI submissions additionally require an explicit unchecked per-conversation consent control. It names the selected/reference/history data, OpenAI processing, possible costs and provider retention. Checking does not send; a separate submission is required. Consent is memory-only, retained for same-selection refocus and cleared on new context/close. No Chrome storage permission/preference or conversation persistence was added. This UI consent is not backend authentication or a defense against hostile page/local process behavior.
+
+The release ZIP is extension-only, with no backend/environment, source maps, tests or dependency directories. The packaging allowlist/manifest/secret-marker checks and checksum extraction test apply to the controlled developer artifact. They do not certify general public safety, arbitrary ZIP parsing or store compliance. The preview intentionally requires loopback access. Public policy URL/operator identity, genuine screenshots, branding/name approval, actual browser evidence and secure backend provisioning remain unresolved. See docs/RELEASE_CHECKLIST.md and docs/PRODUCTION_READINESS_PLAN.md. Do not interpret developer-preview packaging as approval to distribute this to untrusted users or host the backend publicly.

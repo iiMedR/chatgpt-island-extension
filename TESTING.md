@@ -63,3 +63,16 @@ README contains exact setup, Milestone 06 live API steps, Milestone 07 follow-up
 Run npm audit for both packages after lockfile changes. Milestone 09 updated Vitest to the patched 4.1 line and overrides development minimatch to patched 11.x; keep the override under review and remove it once upstream ranges include the fix. Do not use npm audit fix --force or silently upgrade unrelated majors. npm outdated reports available majors; availability alone is not a security finding.
 
 CI runs install/type/lint/format/build/tests/audits and both browser suites, then restores a production build. Local passes do not prove that workflow has passed on GitHub. Public packaging remains gated on live Chrome/browser evidence, an explicit authorization/provisioning decision for the local backend, privacy/cost UX and maintainer reporting setup. See SECURITY.md and PROGRESS.md for severity and unresolved risks.
+
+## 0.9.0 release and consent verification
+
+After a production build, tests/release.test.ts checks consistent versions/manifest, original icon PNG headers/dimensions, deterministic ZIP bytes and lossless readback, required assets, path/file allowlisting and rejection of tampered/secret/development content. UI tests verify send/Enter cannot invoke a real adapter before explicit consent, same-context retention, new-context/close reset, and no implicit send from checking alone. The built-extension HTTP fixture must check the real consent control before sending; its answers remain mock fixtures, not actual AI captures.
+
+```sh
+npm run package:preview
+npm run verify:package
+```
+
+These commands must run from the repository root. Verification extracts the newly generated archive to a clean temporary directory, checks manifest-at-root, runtime references and content hashes, and cleans up. Inspect releases/FILE_LIST.txt and SHA256SUMS.txt. package:preview always rebuilds production; offline/mock/backend-test builds are rejected. Repeated packaging of identical built inputs should give the same ZIP SHA-256. No source/Git timestamps are modified; canonical archive metadata is documented.
+
+Manual addition: load the extracted ZIP folder into real Chrome, reconfigure its actual extension Origin, verify the unchecked consent notice, test decline/close, affirm and submit, follow up, replace context and confirm consent resets. Inspect the original conversation and network as in existing checklists. Real OpenAI calls need separately authorized local credentials; none are made by automated release verification. Capture store screenshots only from actual approved demonstration states; docs/SCREENSHOT_PLAN.md records missing captures rather than fabricating them.

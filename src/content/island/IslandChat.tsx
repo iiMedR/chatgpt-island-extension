@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   MAX_MESSAGE_LENGTH,
   validateQuestion,
@@ -13,6 +13,8 @@ export function IslandChat({
   focusVersion: number;
 }) {
   const state = useSyncExternalStore(manager.subscribe, manager.getSnapshot);
+  const [consented, setConsented] = useState(false);
+  const allowed = manager.kind !== 'ai' || consented;
   const composer = useRef<HTMLTextAreaElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
@@ -34,7 +36,7 @@ export function IslandChat({
       scroller.current.scrollTop = scroller.current.scrollHeight;
   }, [messages]);
   async function submit() {
-    if (submitting || !validation.valid) return;
+    if (!allowed || submitting || !validation.valid) return;
     const result = await manager.submit();
     const field = composer.current;
     if (result === 'success' && field?.isConnected) {
@@ -96,6 +98,31 @@ export function IslandChat({
         </div>
       </div>
       <div className="composer-area">
+        {manager.kind === 'ai' && !consented ? (
+          <section className="consent" aria-label="AI data sharing consent">
+            <p>
+              Submitting sends the selected text, your question and recent
+              island history through your local backend to OpenAI. API usage may
+              cost money. OpenAI retention policies apply.
+            </p>
+            <label>
+              <input
+                type="checkbox"
+                checked={consented}
+                onChange={(event) => {
+                  setConsented(event.target.checked);
+                  if (event.target.checked)
+                    composer.current?.focus({ preventScroll: true });
+                }}
+              />
+              Allow AI processing for this temporary conversation
+            </label>
+            <p>
+              Close the island to decline. Consent resets on close or a new
+              selection.
+            </p>
+          </section>
+        ) : null}
         <form
           className="composer"
           aria-busy={submitting}
@@ -131,7 +158,7 @@ export function IslandChat({
             aria-label={
               state.status === 'error' ? 'Retry question' : 'Send question'
             }
-            disabled={submitting || !validation.valid}
+            disabled={!allowed || submitting || !validation.valid}
           >
             <svg
               aria-hidden="true"

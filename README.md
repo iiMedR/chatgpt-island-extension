@@ -1,6 +1,6 @@
-# ChatGPT Island
+# ChatGPT Island — 0.9.0 Developer Preview
 
-Independent Chrome extension for exploring selected assistant text in a floating mini-chat. Not affiliated with OpenAI.
+Developer preview for trusted local technical evaluation, requiring a separately configured Node backend and OpenAI API setup. Independent extension; not affiliated with OpenAI or ready for general public release.
 
 Milestone 07 improves follow-up context on the existing integration, which connects the island to the OpenAI Responses API through a local Node.js backend. **API usage may incur charges.** The API key belongs only in the backend environment. Never put it in extension code, browser storage, a build variable, Git, or a chat message.
 
@@ -144,3 +144,28 @@ The backend admits at most four simultaneous provider requests per process, retu
 `npm run test:backend-browser` adds built-extension tests against an exclusive credential-free localhost mock HTTP server; stop your local backend before running it. The test fails if port 8787 is occupied. Rebuild with `npm run build` afterward. Existing `test:browser` remains mock-only UI testing. Windows browser launch failures and unperformed live Chrome checks remain explicit release blockers. CI is configured to run both suites on Linux, but has not been run remotely in this session.
 
 Dependency advisories were reviewed before patching development tooling: Vitest's patched 4.1 line and a minimatch 11.x override address the reported test/glob advisories. No AI provider/model or production dependency major was changed. API costs still require the developer to control project billing/usage; cancellation cannot reverse already billed work.
+
+## Developer preview installation and release package
+
+Version **0.9.0 — Developer Preview** is for trusted local technical evaluation. It is not a public consumer release or Chrome Web Store approval. The extension requires a separately configured local Node backend and server-side OpenAI API key; the ZIP does not install/start that service. Public deployment/client authorization, browser/live API evidence, hosted privacy/contact information and final store assets remain blockers.
+
+From the repository root:
+
+```sh
+npm ci
+npm --prefix server ci
+npm run typecheck
+npm run lint
+npm run build
+npm run test
+npm run package:preview
+npm run verify:package
+```
+
+package:preview rebuilds production, checks the manifest/runtime allowlist, excludes build/test metadata and secrets, generates releases/chatgpt-island-v0.9.0.zip, SHA256SUMS.txt, FILE_LIST.txt and release notes. verify:package checks its hash, extracts into a clean temporary directory, validates manifest-at-root/assets/icons and byte-for-byte extraction, then removes only that checked temporary directory. Generated releases/ and dist/ stay Git-ignored; scripts, version/locks and release documentation are committed. Canonical ZIP metadata enables identical package bytes for identical built inputs; it is not a claim of identical builds across all operating systems/toolchains or a Git timestamp change.
+
+Verify the ZIP checksum against SHA256SUMS.txt, extract it to a stable folder, enable Chrome Developer mode at chrome://extensions and Load unpacked that folder (manifest.json is at its root). Copy the newly loaded extension's actual ID into server/.env EXTENSION_ORIGIN, start/restart the backend, and refresh ChatGPT. Moving extracted folders may change the ID. Do not grant incognito access. Uninstall/disable normally through Chrome and stop the backend when finished.
+
+Before each new temporary AI conversation, review the in-island disclosure and check **Allow AI processing for this temporary conversation**, then submit your question. Merely opening, checking consent or typing does not send an AI request. Same-selection refocus retains consent; close or new selected context clears it. Only a boolean in React memory is retained—no new permission or browser storage. You can decline by closing without submitting. The context may already be captured locally by explicit selection; only intentional submission transmits it. Offline mock mode performs no provider processing and does not ask for AI consent.
+
+Read [release notes](docs/RELEASE_NOTES.md), [release checklist](docs/RELEASE_CHECKLIST.md), [privacy-policy draft](docs/PRIVACY_POLICY.md), [store listing](docs/STORE_LISTING.md), [screenshot plan](docs/SCREENSHOT_PLAN.md), [production plan](docs/PRODUCTION_READINESS_PLAN.md) and [manual submission guide](docs/CHROME_WEB_STORE_SUBMISSION.md). Public privacy/contact URLs and store screenshots are not invented. No upload, publication, deployment, Git tag or push is part of these commands.
