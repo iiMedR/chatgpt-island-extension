@@ -2,9 +2,26 @@
 
 Use your authorized ChatGPT plan for an isolated conversation about selected assistant text. This personal Windows project uses official Sign in with ChatGPT through a local Node helper; no API key is required and there is no automatic API-billing fallback. Independent extension; not affiliated with OpenAI. Eligible plan/workspace permissions and usage limits apply.
 
+Repository: [iiMedR/chatgpt-island-extension](https://github.com/iiMedR/chatgpt-island-extension).
+
+## ChatGPT plan requirement
+
+**ChatGPT Free is not supported for this extension's ChatGPT-plan AI requests. Free-plan users must upgrade to an eligible ChatGPT Plus or Pro plan before using AI answers.** Signing in with a free account does not enable plan usage, even if the extension loads and the floating island opens.
+
+If authorization shows **"A required permission is unavailable. You can’t continue with this workspace and plan"**, check the signed-in account's subscription. If it is on Free, upgrade in ChatGPT, then start a fresh sign-in from the extension and approve plan access. If you already have an eligible plan on another account, choose **Use another account or workspace** and sign in with that account instead.
+
+A subscription is necessary but does not guarantee access: OpenAI must also permit plan usage for the selected account and workspace. An upgrade does not fix unrelated selection bugs or an OAuth registration bound to another workspace. Opening the island itself does not require a paid plan; generating AI answers does.
+
+See the [official OpenAI sign-in quickstart](https://developers.openai.com/siwc/quickstart) for eligible plans and authorization requirements. Usage remains subject to your plan's allowance, available credits and OpenAI's policies.
+
 ## Install and configure
 
 Use Node.js 24 and desktop Chrome/Opera on Windows:
+
+```sh
+git clone https://github.com/iiMedR/chatgpt-island-extension.git
+cd chatgpt-island-extension
+```
 
 ```sh
 npm ci
@@ -69,6 +86,7 @@ Live selection/window/popup checks passed on the user's Chrome session. Initial 
 
 ## Troubleshooting
 
+- Free-plan permission error: upgrade to an eligible ChatGPT Plus or Pro plan, then authorize again. If an eligible subscription already exists, select that account and workspace; purchasing another plan is not a remedy for every authorization error.
 - Helper unavailable: keep the helper running on 127.0.0.1:8787 with the exact extension origin. It is needed for sign-in and answers, but not for opening the island.
 - Sign-in says attempt ended: close old authorization tabs, cancel the waiting sign-in with Disconnect, and start from Continue with ChatGPT again. Report repeated failures; do not paste authorization URLs or token files.
 - Identity connected but no plan permission: authorize plan usage; an identity-only login cannot run inference.
