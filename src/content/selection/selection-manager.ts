@@ -124,7 +124,7 @@ export function createSelectionManager({
         const path: string[] = [];
         for (
           let depth = 0;
-          element && depth < 16;
+          element && depth < 64;
           depth++, element = element.parentElement
         ) {
           const role = element.getAttribute('data-message-author-role');
@@ -138,6 +138,15 @@ export function createSelectionManager({
               .slice(0, 30) +
               (role !== null ? `[author=${safeRole(role)}]` : '') +
               (turn !== null ? `[turn=${safeRole(turn)}]` : '') +
+              (element.matches('[data-testid^="conversation-turn-"]')
+                ? '[turn-container]'
+                : '') +
+              (element.hasAttribute('data-message-id')
+                ? '[message-container]'
+                : '') +
+              (element.matches('[data-testid="copy-turn-action-button"]')
+                ? '[assistant-copy]'
+                : '') +
               (element.hasAttribute('contenteditable')
                 ? '[editable-attribute]'
                 : ''),

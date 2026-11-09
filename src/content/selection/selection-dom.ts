@@ -1,7 +1,9 @@
 import type { SelectionResult } from './selection-types';
 import { validateSelectionText } from './selection-validator';
 
-const MESSAGE = '[data-message-author-role], article[data-turn]';
+const TURN = '[data-testid^="conversation-turn-"], [data-message-id]';
+const MESSAGE = `[data-message-author-role], [data-turn], ${TURN}`;
+const ASSISTANT_ACTION = 'button[data-testid="copy-turn-action-button"]';
 const EXCLUDED =
   'input, textarea, select, button, form, nav, aside, [role="navigation"], [role="search"], [role="complementary"], [role="textbox"], [contenteditable]:not([contenteditable="false"]), [data-chatgpt-island-root]';
 
@@ -37,7 +39,19 @@ function isAssistant(message: Element): boolean {
   const role =
     message.getAttribute('data-message-author-role') ??
     message.getAttribute('data-turn');
-  return role === 'assistant';
+  if (role !== null) return role === 'assistant';
+  // Some ChatGPT layouts omit author-role attributes. Require a bounded
+  // message/turn container AND its assistant-only action, never generic prose,
+  // Markdown classes, localized labels or the presence of any Copy button.
+  return (
+    message.matches(TURN) &&
+    !message.querySelector(
+      '[data-message-author-role="user"], [data-turn="user"]',
+    ) &&
+    Array.from(message.querySelectorAll(ASSISTANT_ACTION)).some(
+      (control) => control.closest(TURN) === message,
+    )
+  );
 }
 
 // Inspect only the selected range and its ancestors, never all page messages.

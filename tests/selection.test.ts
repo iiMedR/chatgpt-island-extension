@@ -85,6 +85,36 @@ describe('text and DOM validation', () => {
       text: 'Answer',
     });
   });
+  it.each([
+    'data-testid="conversation-turn-8"',
+    'data-message-id="private-message-id"',
+  ])(
+    'accepts div-only assistant turns identified by their specific action: %s',
+    (attributes) => {
+      fixture(
+        `<main><div ${attributes}><div><p id="a">First</p><p id="b">Second</p></div><button data-testid="copy-turn-action-button" aria-label="Copy response"><svg></svg></button></div></main>`,
+      );
+      const selection = select('#a', '#b');
+      expect(readAssistantSelection(selection, document)).toEqual({
+        valid: true,
+        text: selection.toString().trim(),
+      });
+    },
+  );
+  it.each([
+    '<div data-testid="conversation-turn-1"><p id="a">User</p><button data-testid="copy-turn-action-button">Copy</button></div><div data-testid="conversation-turn-2"><p id="b">Assistant</p><button data-testid="copy-turn-action-button">Copy</button></div>',
+    '<div data-testid="conversation-turn-1" data-turn="user"><p id="a">User</p><button data-testid="copy-turn-action-button">Copy</button><p id="b">User</p></div>',
+    '<div data-testid="conversation-turn-1"><p id="a">Unknown</p><button aria-label="Copy">Copy</button><p id="b">Unknown</p></div>',
+    '<main><div data-testid="conversation-turn-1"><p id="a">User</p><p id="b">User</p></div><div data-testid="conversation-turn-2"><button data-testid="copy-turn-action-button">Copy</button></div></main>',
+  ])(
+    'rejects ambiguous, user, cross-turn and unrelated-action selections',
+    (html) => {
+      fixture(html);
+      expect(readAssistantSelection(select('#a', '#b'), document).valid).toBe(
+        false,
+      );
+    },
+  );
   it('accepts a response spanning nested assistant blocks in one turn', () => {
     fixture(
       '<article data-turn="assistant"><div data-message-author-role="assistant"><p id="a">Writing</p><button aria-label="Copy"><svg></svg></button><p id="b">Card content</p></div><div data-message-author-role="assistant"><p id="c">Explanation</p></div></article>',

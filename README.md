@@ -1,4 +1,4 @@
-# ChatGPT Island — 0.9.3 Developer Preview
+# ChatGPT Island — 0.9.4 Developer Preview
 
 Developer preview for trusted local technical evaluation, requiring a separately configured Node backend and OpenAI API setup. Independent extension; not affiliated with OpenAI or ready for general public release.
 
@@ -147,7 +147,7 @@ Dependency advisories were reviewed before patching development tooling: Vitest'
 
 ## Developer preview installation and release package
 
-Version **0.9.3 — Developer Preview** is for trusted local technical evaluation. It is not a public consumer release or Chrome Web Store approval. The extension requires a separately configured local Node backend and server-side OpenAI API key; the ZIP does not install/start that service. Public deployment/client authorization, browser/live API evidence, hosted privacy/contact information and final store assets remain blockers.
+Version **0.9.4 — Developer Preview** is for trusted local technical evaluation. It is not a public consumer release or Chrome Web Store approval. The extension requires a separately configured local Node backend and server-side OpenAI API key; the ZIP does not install/start that service. Public deployment/client authorization, browser/live API evidence, hosted privacy/contact information and final store assets remain blockers.
 
 From the repository root:
 
@@ -162,7 +162,7 @@ npm run package:preview
 npm run verify:package
 ```
 
-package:preview rebuilds production, checks the manifest/runtime allowlist, excludes build/test metadata and secrets, generates releases/chatgpt-island-v0.9.3.zip, SHA256SUMS.txt, FILE_LIST.txt and release notes. verify:package checks its hash, extracts into a clean temporary directory, validates manifest-at-root/assets/icons and byte-for-byte extraction, then removes only that checked temporary directory. Generated releases/ and dist/ stay Git-ignored; scripts, version/locks and release documentation are committed. Canonical ZIP metadata enables identical package bytes for identical built inputs; it is not a claim of identical builds across all operating systems/toolchains or a Git timestamp change.
+package:preview rebuilds production, checks the manifest/runtime allowlist, excludes build/test metadata and secrets, generates releases/chatgpt-island-v0.9.4.zip, SHA256SUMS.txt, FILE_LIST.txt and release notes. verify:package checks its hash, extracts into a clean temporary directory, validates manifest-at-root/assets/icons and byte-for-byte extraction, then removes only that checked temporary directory. Generated releases/ and dist/ stay Git-ignored; scripts, version/locks and release documentation are committed. Canonical ZIP metadata enables identical package bytes for identical built inputs; it is not a claim of identical builds across all operating systems/toolchains or a Git timestamp change.
 
 Verify the ZIP checksum against SHA256SUMS.txt, extract it to a stable folder, enable Chrome Developer mode at chrome://extensions and Load unpacked that folder (manifest.json is at its root). Copy the newly loaded extension's actual ID into server/.env EXTENSION_ORIGIN, start/restart the backend, and refresh ChatGPT. Moving extracted folders may change the ID. Do not grant incognito access. Uninstall/disable normally through Chrome and stop the backend when finished.
 
@@ -172,7 +172,7 @@ Read [release notes](docs/RELEASE_NOTES.md), [release checklist](docs/RELEASE_CH
 
 ## Sign in with ChatGPT — feasibility assessed, not available in this build
 
-Milestone 11 investigated official Sign in with ChatGPT documentation. Version 0.9.3 still uses the separately configured API-key backend. There is no Continue with ChatGPT, Connected or Disconnect feature in this build, and a ChatGPT subscription does not authorize its existing API-key requests.
+Milestone 11 investigated official Sign in with ChatGPT documentation. Version 0.9.4 still uses the separately configured API-key backend. There is no Continue with ChatGPT, Connected or Disconnect feature in this build, and a ChatGPT subscription does not authorize its existing API-key requests.
 
 The documented open-source/local-runtime route is a possible future integration, subject to this project's eligibility and secure runtime provisioning. A Chrome-only migration is not verified: the provider's documented callback and Chrome Identity's callback differ, and extension-origin inference/token CORS was not established. This repository's own open-source licensing/private-client approval is unresolved. No workaround, speculative sign-in button or extra Chrome permission was added.
 
@@ -180,10 +180,10 @@ Read [OAuth feasibility and migration gates](docs/OAUTH_FEASIBILITY.md) for the 
 
 Closing the island still clears its temporary chat, consent and pending work. There is currently no OAuth session to disconnect. A future verified implementation must keep authentication independent of that cleanup, expose an explicit Disconnect action, and never silently fall back from plan usage to separately billed API-key inference. Until then, use the existing backend configuration and consent instructions above; no authorization steps for an unimplemented feature are implied.
 
-## Browser installation troubleshooting (0.9.3)
+## Browser installation troubleshooting (0.9.4)
 
 After installing/reloading, refresh the ChatGPT conversation tab. The popup now requires a successful content-script probe before saying ChatGPT page connected. If it asks to refresh, reload the page; URL support alone is insufficient. It also shows the browser's actual shortcut assignment. Configure a missing/conflicting binding at chrome://extensions/shortcuts.
 
 Highlight text inside an assistant response, then click Open island in the extension popup to test the selection/receiver independently of native shortcut delivery. Missing selection and receiver errors are shown without logging or returning the text. A backend is not needed to display the window; it is needed for AI answers. OAuth remains feasibility-only, not a hidden login setting. The selection getter now flushes only pending debounced validation, preserving all prior range/exclusion/privacy rules.
 
-If selection still fails, version 0.9.3 displays Selection diagnostics after Open island fails. These contain structural tags and fixed rejection codes, without selected text. Copy that diagnostic block when reporting the failure. This diagnostic release does not claim the live Opera selection issue is fixed.
+If selection still fails, version 0.9.4 displays Selection diagnostics after Open island fails. These contain structural tags and fixed rejection codes, without selected text. Copy that diagnostic block when reporting the failure. This diagnostic release does not claim the live Opera selection issue is fixed.

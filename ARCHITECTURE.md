@@ -126,3 +126,7 @@ Chrome Identity is not interchangeable with the documented OSS loopback redirect
 Chat history isolation stays architectural: client state is temporary, and current code does not automate the ChatGPT composer or call conversation endpoints. Future stateless inference must preserve that separation, but its visible account-history behavior and external retention need independent verification. Close must dispose partial output/context without signing out a future account; Disconnect belongs to authentication state, not IslandConversation. Feasibility does not migrate the 0.9.0 release artifact or remove its API-key fallback.
 
 Selection compatibility (0.9.2): nested assistant response blocks share their enclosing same-author turn boundary. Ranges may cross icon-only response-card buttons when they contain no selected text; actual selected control text and editable/user regions remain excluded. Validation inspects only the explicitly selected range.
+
+### Alternate ChatGPT turn markup
+
+Where author attributes are absent, selection validation can recognize a message/turn container by data-testid conversation-turn or data-message-id together with an exact assistant copy-turn-action-button belonging to that container. An explicit user role overrides this fallback. It does not use prose classes, localized labels or generic Copy buttons. Only explicitly selected text is captured; action queries inspect structure within the containing turn. Unknown layouts remain rejected rather than treating arbitrary text as assistant output.
