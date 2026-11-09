@@ -2,7 +2,7 @@
 
 ## Milestone plan
 
-Prompts 01–10 were supplied. Earlier sections are historical checkpoints. Milestone 10 prepares a controlled 0.9.0 developer-preview package and release drafts; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–11 were supplied. Earlier sections are historical checkpoints. Milestone 11 completes an OAuth feasibility assessment without changing the 0.9.0 authentication path; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
@@ -14,6 +14,7 @@ Prompts 01–10 were supplied. Earlier sections are historical checkpoints. Mile
 8. Floating window UX and interaction polish — implemented; automated evidence and browser limitations below.
 9. Testing, security and reliability — implemented; Partial due browser/live integration and distribution blockers below.
 10. Developer-preview packaging and release preparation — implemented; public release blocked and live verification pending below.
+11. OAuth feasibility — assessment completed; extension migration not verified, existing API-key runtime retained.
 
 ## Milestone 01 checklist
 
@@ -401,3 +402,37 @@ Developer-preview ZIP is for controlled local technical evaluation with document
 Artifact: releases/chatgpt-island-v0.9.0.zip. The authoritative final checksum/size is in releases/SHA256SUMS.txt and the package command output; this avoids stale copied hashes when rebuilding. Its complete verified file list is in releases/FILE_LIST.txt: manifest.json, background.js, content.js, the runtime popup HTML and its compiled JS/CSS assets, four PNG icons and THIRD_PARTY_NOTICES.txt (11 files). releases/RELEASE_NOTES.md is a separate companion copied from tracked docs/RELEASE_NOTES.md. Generated artifacts are intentionally ignored, not omitted accidentally from Git. No backend installer/service is present.
 
 Release drafts are complete as drafts; final screenshot images, hosted policy/contact URLs, account eligibility, name/branding/licensing and public authorization are FAIL or NOT VERIFIED in the checklist. The first archive generation attempt failed on an obsolete .gitkeep, and initial artifact test imports failed on a virtual jsdom URL; both were fixed and all 224 tests then passed. The final formatting check initially flagged manifest.config.ts; formatting was corrected and checked again. No unresolved functional test failure is hidden. Browser startup failures remain unresolved environmental evidence, not passes.
+
+## Milestone 11 — OAuth feasibility and migration gate
+
+Status: **Feasibility-only**. The requested investigation is completed; authentication/inference migration is **not implemented** or represented as successful. Decision C applies to this standalone Chrome application because compatible redirect/CORS and app eligibility are not established. Decision B is a documented candidate for eligible open-source apps using a local runtime, not a verified registration or permission grant for this repository. No further milestone was started.
+
+Reviewed the six supplied official OpenAI references, their current linked registration/accounts/token pages, partner enrollment and Chrome Identity/MV3/storage/permission guidance. The supplied registration-and-sign-in page returned 404; the official overview's current link is /siwc/token-sharing-open-source/sign-in. Markdown representations were unavailable through the web tool; HTML article sections were fetched instead. Documentation findings and the complete 15-question matrix are in docs/OAUTH_FEASIBILITY.md, with exact source URLs and no invented client IDs/account approval/region eligibility.
+
+Key findings: official local-runtime plan use exists, distinct from identity-only login and standard API-key inference. Its documented redirect does not match Chrome Identity's extension redirect; browser-origin token/model/inference behavior is unverified. Current local app licensing/distribution is unresolved, with no approved root open-source license/private-client approval shown in repository evidence. This does not establish that the provider rejected the app. A local candidate would need secure caller provisioning, credential custody, lifecycle/revocation and streaming across the existing adapter/UI boundary. Current provider request fields are not a drop-in OAuth contract. Preserve the API-key integration until both authorization and inference are actually demonstrated.
+
+Reused unchanged: all selection/command/controller/Shadow DOM/UI/conversation/history/consent/cancellation/API provider/backend code, manifest, environment examples, version/locks and tests. Files created/updated: docs/OAUTH_FEASIBILITY.md; README, ARCHITECTURE, SECURITY and PROGRESS. No identity/storage permission, callback, authentication button, credential file, network endpoint or provider switch was added. No cookies/session tokens/website auth storage were read. No live registration, login, refresh, inference or paid call occurred.
+
+Manual OAuth scenarios A–F (first authorization, real inference, follow-up, close/reopen retaining login, explicit Disconnect, failure/stream recovery) remain **not executable in this build and NOT VERIFIED**. The report's migration plan requires resolving eligibility and demonstrating the official local path before adding UI. Do not instruct users to click a nonexistent button. Mock OAuth/SSE tests are not fabricated for an unimplemented flow; existing regression tests protect the retained functionality. Native Chrome execution remains unavailable based on previous spawn UNKNOWN results; no new browser pass is claimed.
+
+Remaining blockers: determine/approve product licensing and integration eligibility; confirm any extension-specific provider requirements; provision and secure the helper caller boundary/credential store; implement and test a genuinely supported provider lifecycle and stream; verify account/region/grant/model access, signed-inference completion, cancellation and visible history behavior using an eligible consenting account. Any broader/private/commercial deployment requires its appropriate provider access, not OSS assumptions. Region-specific admission errors cannot be translated into a guessed allowed-country list. No silent billing fallback is permitted.
+
+Verification results follow after running requested checks. Documentation-only changes deliberately preserve the 0.9.0 runtime/release architecture. The final commit uses docs: assess chatgpt oauth integration feasibility rather than claiming a feature implementation.
+
+### Milestone 11 actual verification
+
+| Command/check                              | Result                                                                                                           |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| npm run typecheck                          | Passed, including backend typecheck                                                                              |
+| npm run lint                               | Passed                                                                                                           |
+| npm run format:check                       | Passed                                                                                                           |
+| npm run test                               | 224 tests passed across 19 files; external providers mocked/public fetch guarded                                 |
+| npm run build                              | Passed; extension and backend compile, production/openai mode                                                    |
+| npm run verify:package                     | Existing 0.9.0 ZIP hash/clean extraction/runtime assets still valid; no release package regenerated              |
+| Runtime/permission diff                    | None; only five documentation files changed                                                                      |
+| OAuth login/inference/refresh/stream tests | NOT IMPLEMENTED / NOT RUN, not reported as passed                                                                |
+| Browser/manual scenarios                   | NOT RUN; earlier browser environment cannot spawn Chromium, no eligible account registration or credentials used |
+
+Existing tests continue covering temporary cleanup, no persistent chats, selected-only bounded input, no original-composer submission, request cancellation/retry and bundle secret markers. This does not establish new OAuth/history behavior. Source inspection found only fixed-label/code diagnostics and the existing fixed loopback/provider paths; no undocumented authentication endpoints, token extraction or new logging were added. Identity permission is absent. The unchanged server API-key environment and the 0.9.0 preview limitations remain accurate.
+
+Assessment completed under the prompt's feasibility-only branch; migration is not claimed. Conditional local-runtime support and its unverified application eligibility are distinct conclusions. No subsequent milestone, provider enrollment, account sign-in, public deployment, tag or push occurred.
