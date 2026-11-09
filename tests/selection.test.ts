@@ -38,6 +38,45 @@ afterEach(() => {
 });
 
 describe('text and DOM validation', () => {
+  it.each(['start', 'end', 'both'])(
+    'accepts actual assistant text when %s endpoints use outer element offsets',
+    (boundary) => {
+      fixture(
+        '<div id="turn"><div data-chatgpt-selection-message-id="a"><div data-markdown-text-style="assistant-message"><ul><li><span id="text">A selected explanation</span></li></ul></div></div></div>',
+      );
+      const selection = select('#text');
+      const range = selection.getRangeAt(0);
+      if (boundary === 'start' || boundary === 'both')
+        range.setStart(document.querySelector('#turn')!, 0);
+      if (boundary === 'end' || boundary === 'both')
+        range.setEnd(document.querySelector('#turn')!, 1);
+      expect(readAssistantSelection(selection, document)).toEqual({
+        valid: true,
+        text: 'A selected explanation',
+      });
+    },
+  );
+  it('accepts a range ending just before another message but rejects including its text', () => {
+    fixture(
+      '<main id="turns"><div data-markdown-text-style="assistant-message"><p id="a">Answer</p></div><div data-markdown-text-style="user-message"><p id="b">Private question</p></div></main>',
+    );
+    const selection = select('#a');
+    selection.getRangeAt(0).setEnd(document.querySelector('#turns')!, 1);
+    expect(readAssistantSelection(selection, document)).toEqual({
+      valid: true,
+      text: 'Answer',
+    });
+    selection.getRangeAt(0).setEnd(document.querySelector('#turns')!, 2);
+    expect(readAssistantSelection(selection, document).valid).toBe(false);
+  });
+  it('does not normalize away selected editable content between assistant endpoints', () => {
+    fixture(
+      '<div id="turn"><div data-markdown-text-style="assistant-message"><p id="a">Answer</p><textarea>Private draft</textarea><p>More</p></div></div>',
+    );
+    const selection = select('#a');
+    selection.getRangeAt(0).setEnd(document.querySelector('#turn')!, 1);
+    expect(readAssistantSelection(selection, document).valid).toBe(false);
+  });
   it.each(
     ['   ', 'x'.repeat(10001)].map((text) => ({ text, length: text.length })),
   )('rejects invalid selected assistant text of length $length', ({ text }) => {

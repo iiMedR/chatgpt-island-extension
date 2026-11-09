@@ -70,6 +70,57 @@ function isAssistant(message: Element): boolean {
   );
 }
 
+// Browser drag/line selections can end at a parent element's child offset,
+// beyond the response's markup, without selecting any text outside it.
+// Resolve only the non-whitespace text actually intersected by this range.
+// Reject non-intersecting subtrees before descending; never scan page prose.
+function selectedTextRange(original: Range, document: Document): Range | null {
+  const root = original.commonAncestorContainer;
+  const walker = document.createTreeWalker(
+    root,
+    NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        if (!original.intersectsNode(node)) return NodeFilter.FILTER_REJECT;
+        return node.nodeType === Node.TEXT_NODE
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_SKIP;
+      },
+    },
+  );
+  let node: Node | null =
+    root.nodeType === Node.TEXT_NODE ? root : walker.nextNode();
+  let first: { node: Node; offset: number } | undefined;
+  let last: { node: Node; offset: number } | undefined;
+  while (node) {
+    const overlap = document.createRange();
+    overlap.selectNodeContents(node);
+    if (original.compareBoundaryPoints(Range.START_TO_START, overlap) > 0)
+      overlap.setStart(original.startContainer, original.startOffset);
+    if (original.compareBoundaryPoints(Range.END_TO_END, overlap) < 0)
+      overlap.setEnd(original.endContainer, original.endOffset);
+    if (overlap.toString().trim()) {
+      first ??= {
+        node,
+        offset: node === original.startContainer ? original.startOffset : 0,
+      };
+      last = {
+        node,
+        offset:
+          node === original.endContainer
+            ? original.endOffset
+            : node.textContent!.length,
+      };
+    }
+    node = walker.nextNode();
+  }
+  if (!first || !last) return null;
+  const normalized = document.createRange();
+  normalized.setStart(first.node, first.offset);
+  normalized.setEnd(last.node, last.offset);
+  return normalized;
+}
+
 // Inspect only the selected range and its ancestors, never all page messages.
 export function readAssistantSelection(
   selection: Selection | null,
@@ -84,7 +135,10 @@ export function readAssistantSelection(
   // document range selects an assistant response; validate that range below.
   if (document.activeElement?.closest('input, textarea, select'))
     return { valid: false, reason: 'excluded-region' };
-  const range = selection.getRangeAt(0);
+  const text = validateSelectionText(selection.toString());
+  if (!text.valid) return text;
+  const range = selectedTextRange(selection.getRangeAt(0), document);
+  if (!range) return { valid: false, reason: 'empty' };
   const start = elementFor(range.startContainer);
   const end = elementFor(range.endContainer);
   const message = messageFor(range.startContainer);
@@ -120,5 +174,5 @@ export function readAssistantSelection(
     }
     node = walker.nextNode();
   }
-  return validateSelectionText(selection.toString());
+  return text;
 }
