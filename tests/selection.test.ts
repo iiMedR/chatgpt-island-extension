@@ -85,6 +85,32 @@ describe('text and DOM validation', () => {
       text: 'Answer',
     });
   });
+  it('accepts a response spanning nested assistant blocks in one turn', () => {
+    fixture(
+      '<article data-turn="assistant"><div data-message-author-role="assistant"><p id="a">Writing</p><button aria-label="Copy"><svg></svg></button><p id="b">Card content</p></div><div data-message-author-role="assistant"><p id="c">Explanation</p></div></article>',
+    );
+    const selection = select('#a', '#c');
+    expect(readAssistantSelection(selection, document)).toEqual({
+      valid: true,
+      text: selection.toString().trim(),
+    });
+  });
+  it('still rejects selected text from response-card controls', () => {
+    fixture(
+      '<article data-turn="assistant"><p id="a">Before</p><button>Private action</button><p id="b">After</p></article>',
+    );
+    expect(readAssistantSelection(select('#a', '#b'), document).valid).toBe(
+      false,
+    );
+  });
+  it('rejects nested user messages inside an assistant turn', () => {
+    fixture(
+      '<article data-turn="assistant"><p id="a">Before</p><div data-message-author-role="user">User</div><p id="b">After</p></article>',
+    );
+    expect(readAssistantSelection(select('#a', '#b'), document).valid).toBe(
+      false,
+    );
+  });
   it.each([
     '<div data-message-author-role="user"><p id="text">User</p></div>',
     '<textarea id="text">Composer</textarea>',

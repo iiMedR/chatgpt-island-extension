@@ -38,8 +38,8 @@ it('keeps project, backend, locks and Chrome preview version consistent', async 
     'server/package.json',
     'server/package-lock.json',
   ])
-    expect(JSON.parse(await readFile(name, 'utf8')).version).toBe('0.9.1');
-  expect(manifest.version).toBe('0.9.1');
+    expect(JSON.parse(await readFile(name, 'utf8')).version).toBe('0.9.2');
+  expect(manifest.version).toBe('0.9.2');
   expect(manifest.version_name).toContain('Developer Preview');
 });
 it('generates original raster icons at every registered size', () => {

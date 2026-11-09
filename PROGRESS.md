@@ -446,3 +446,11 @@ Fixed confirmed logic gaps: popup now probes the top-frame content script before
 Added popup receiver/assignment/manual-open/error tests and an immediate-selection getter regression. Backend is required for AI answers, not window opening. Native shortcut/live ChatGPT behavior remains to be verified by the user on the installed browser; no browser success is inferred from unit tests.
 
 Post-feedback verification: npm run typecheck and lint passed; 228 tests passed across 19 files; production/package build, formatting and verify:package passed. Patched artifact: releases/chatgpt-island-v0.9.1.zip (164,885 bytes at this build). Real-browser diagnosis remains pending; users must reload the updated extension, refresh the existing ChatGPT tab, select assistant text, and use the popup's Open island result/actual shortcut assignment to distinguish receiver, selection and native shortcut issues. No OAuth implementation or live API test is claimed.
+
+## Post-feedback selection compatibility — 0.9.2
+
+The user's updated popup proves the content script is connected and reports no valid selection despite a visible selection spanning a Writing card and subsequent assistant prose. Source inspection identified reproducible rejection cases: nested same-author semantic blocks were treated as different messages, and icon-only controls intersecting the selected range caused rejection. Selection boundaries now resolve to the enclosing same-author turn; icon-only buttons without selected text may be crossed. Selected button text, nested user content, editable regions and separate turns remain rejected. No selectors based on styling or broad page collection were added. Three regression tests cover the supported layout and retained boundaries. This reproduces plausible causes with fixtures, not a verified inspection of the user's live DOM.
+
+Verification: 231 tests passed across 19 files (external responses mocked); native Chrome/ChatGPT verification not performed. Version 0.9.2 distinguishes this selection compatibility patch from 0.9.1. No OAuth or network behavior changes.
+
+0.9.2 checks: typecheck (including backend), lint, production extension/backend build and ZIP clean-extraction validation all passed. Packaged artifact: releases/chatgpt-island-v0.9.2.zip. Manual live-browser results remain unverified.

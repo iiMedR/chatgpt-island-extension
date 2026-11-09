@@ -12,7 +12,25 @@ function elementFor(node: Node): Element | null {
 }
 
 function messageFor(node: Node): Element | null {
-  return elementFor(node)?.closest(MESSAGE) ?? null;
+  let message = elementFor(node)?.closest(MESSAGE) ?? null;
+  // ChatGPT can nest role-marked response blocks inside the same assistant turn.
+  // Use that turn as the boundary, without crossing a differently authored region.
+  while (message && isAssistant(message)) {
+    const parent = message.parentElement?.closest(MESSAGE);
+    if (!parent || !isAssistant(parent)) break;
+    message = parent;
+  }
+  return message;
+}
+
+function hasSelectedText(element: Element, range: Range): boolean {
+  const overlap = element.ownerDocument.createRange();
+  overlap.selectNodeContents(element);
+  if (range.compareBoundaryPoints(Range.START_TO_START, overlap) > 0)
+    overlap.setStart(range.startContainer, range.startOffset);
+  if (range.compareBoundaryPoints(Range.END_TO_END, overlap) < 0)
+    overlap.setEnd(range.endContainer, range.endOffset);
+  return Boolean(overlap.toString().trim());
 }
 
 function isAssistant(message: Element): boolean {
@@ -59,8 +77,11 @@ export function readAssistantSelection(
     const element = node as Element;
     if (
       range.intersectsNode(element) &&
-      (element.matches(EXCLUDED) ||
-        (element.matches(MESSAGE) && element !== message))
+      ((element.matches(EXCLUDED) &&
+        // Icon-only copy/expand controls inside a response card contribute no
+        // selected text. Editable fields and other excluded regions stay strict.
+        !(element.matches('button') && !hasSelectedText(element, range))) ||
+        (element.matches(MESSAGE) && messageFor(element) !== message))
     ) {
       return { valid: false, reason: 'excluded-region' };
     }

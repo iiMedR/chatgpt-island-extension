@@ -1,4 +1,4 @@
-# ChatGPT Island 0.9.1 — Developer Preview
+# ChatGPT Island 0.9.2 — Developer Preview
 
 Prepared 2026-11-09. Local technical evaluation only; not publicly published, Web Store approved or verified for consumer use.
 
