@@ -77,6 +77,10 @@ export function initializeContent(
       reply({ running: true });
       return;
     }
+    if (message.type === 'SELECTION_DIAGNOSTICS') {
+      reply({ diagnostics: manager.diagnostics() });
+      return;
+    }
     const result = trigger();
     if (import.meta.env.DEV)
       console.debug('[ChatGPT Island] Trigger:', result.status);

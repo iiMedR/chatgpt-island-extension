@@ -16,6 +16,7 @@ export default function App() {
   const [shortcut, setShortcut] = useState('');
   const [feedback, setFeedback] = useState('');
   const [opening, setOpening] = useState(false);
+  const [diagnostics, setDiagnostics] = useState('');
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -89,6 +90,36 @@ export default function App() {
     setFeedback('');
     try {
       const result = await handleCommand('open-island', tab);
+      if (result === 'no-selection' || result === 'invalid-selection') {
+        let diagnosticTimer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          const response: unknown = await Promise.race([
+            chrome.tabs.sendMessage(
+              tab.id!,
+              { type: 'SELECTION_DIAGNOSTICS' },
+              { frameId: 0 },
+            ),
+            new Promise<null>((resolve) => {
+              diagnosticTimer = setTimeout(
+                () => resolve(null),
+                RESPONSE_TIMEOUT_MS,
+              );
+            }),
+          ]);
+          setDiagnostics(
+            typeof response === 'object' &&
+              response !== null &&
+              'diagnostics' in response &&
+              typeof response.diagnostics === 'string'
+              ? response.diagnostics.slice(0, 3000)
+              : 'Diagnostics unavailable.',
+          );
+        } catch {
+          setDiagnostics('Diagnostics unavailable.');
+        } finally {
+          clearTimeout(diagnosticTimer);
+        }
+      } else setDiagnostics('');
       setFeedback(
         messages[result] ??
           'Could not reach the page. Refresh ChatGPT after reloading the extension.',
@@ -116,7 +147,9 @@ export default function App() {
   return (
     <main className="w-80 space-y-5 p-5">
       <header className="space-y-2">
-        <h1 className="text-lg font-semibold tracking-tight">ChatGPT Island</h1>
+        <h1 className="text-lg font-semibold tracking-tight">
+          ChatGPT Island <small>0.9.3</small>
+        </h1>
         <p className="text-sm text-muted">
           Explore selected text without leaving your conversation.
         </p>
@@ -140,6 +173,23 @@ export default function App() {
         <p role="status" className="text-sm">
           {feedback}
         </p>
+      ) : null}
+      {diagnostics ? (
+        <section
+          aria-label="Selection diagnostics"
+          className="text-xs break-words"
+        >
+          <p>Selection diagnostics (no conversation text)</p>
+          <pre
+            style={{
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'anywhere',
+              userSelect: 'text',
+            }}
+          >
+            {diagnostics}
+          </pre>
+        </section>
       ) : null}
       <p className="text-xs leading-relaxed text-muted">
         Developer preview. OAuth sign-in is not implemented. AI answers require

@@ -87,6 +87,25 @@ it('does not probe unsupported websites', async () => {
   ).toBeInTheDocument();
   expect(sendMessage).not.toHaveBeenCalled();
 });
+it('shows structural diagnostics after selection rejection', async () => {
+  const { sendMessage } = chromeMock();
+  render(<App />);
+  await screen.findByText('ChatGPT page connected');
+  sendMessage
+    .mockResolvedValueOnce({ status: 'no-selection' })
+    .mockResolvedValueOnce({
+      diagnostics: 'Last capture: outside-assistant; start: p > main',
+    });
+  fireEvent.click(screen.getByRole('button', { name: 'Open island' }));
+  expect(
+    await screen.findByText('Last capture: outside-assistant; start: p > main'),
+  ).toBeInTheDocument();
+  expect(sendMessage).toHaveBeenLastCalledWith(
+    7,
+    { type: 'SELECTION_DIAGNOSTICS' },
+    { frameId: 0 },
+  );
+});
 it('handles Chrome API failures', async () => {
   chromeMock();
   vi.mocked(chrome.tabs.query).mockRejectedValue(Error('Unavailable'));

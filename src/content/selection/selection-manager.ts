@@ -38,8 +38,10 @@ export function createSelectionManager({
   let disposed = false;
   let suspended = false;
   let stale: ReturnType<typeof signature> = null;
+  let lastResult = 'not-observed';
   const clear = () => {
     captured = null;
+    lastResult = 'cleared';
     if (pending !== undefined) window.clearTimeout(pending);
     pending = undefined;
     stale = signature(window.getSelection());
@@ -68,6 +70,7 @@ export function createSelectionManager({
       return;
     stale = null;
     const result = readAssistantSelection(selection, document);
+    lastResult = result.valid ? 'valid' : result.reason;
     if (!result.valid) {
       debug?.('rejected', result.reason);
       return;
@@ -109,6 +112,42 @@ export function createSelectionManager({
   // URL-only safety net for older browsers and isolated-world Navigation API differences.
   const interval = window.setInterval(checkNavigation, 1000);
   return {
+    diagnostics(): string {
+      // Structural, bounded diagnostics only: no text, URLs, IDs, classes or
+      // arbitrary attribute values leave the page.
+      if (disposed) return 'disposed';
+      checkNavigation();
+      const selection = window.getSelection();
+      const describe = (node: Node | null) => {
+        let element =
+          node?.nodeType === 1 ? (node as Element) : node?.parentElement;
+        const path: string[] = [];
+        for (
+          let depth = 0;
+          element && depth < 16;
+          depth++, element = element.parentElement
+        ) {
+          const role = element.getAttribute('data-message-author-role');
+          const turn = element.getAttribute('data-turn');
+          const safeRole = (value: string) =>
+            ['assistant', 'user', 'system'].includes(value) ? value : 'other';
+          path.push(
+            element.tagName
+              .toLowerCase()
+              .replace(/[^a-z0-9-]/g, '')
+              .slice(0, 30) +
+              (role !== null ? `[author=${safeRole(role)}]` : '') +
+              (turn !== null ? `[turn=${safeRole(turn)}]` : '') +
+              (element.hasAttribute('contenteditable')
+                ? '[editable-attribute]'
+                : ''),
+          );
+        }
+        return path.join(' > ') || 'none';
+      };
+      const result = readAssistantSelection(selection, document);
+      return `Last capture: ${lastResult}; current: ${result.valid ? 'valid' : result.reason}; cached: ${captured ? 'yes' : 'no'}; focused: ${describe(document.activeElement)}; start: ${describe(selection?.anchorNode ?? null)}; end: ${describe(selection?.focusNode ?? null)}`;
+    },
     getSelection(): CapturedSelection | null {
       if (disposed || checkNavigation()) return null;
       // A shortcut may arrive before the scheduled selection debounce finishes.

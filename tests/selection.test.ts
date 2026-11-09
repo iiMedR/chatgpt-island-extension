@@ -164,6 +164,27 @@ describe('text and DOM validation', () => {
 });
 
 describe('selection lifecycle', () => {
+  it('reports bounded structural rejection details without selected text or arbitrary attributes', () => {
+    fixture(
+      '<main id="private-id" class="private-class" data-turn="private-value"><p id="text">Private selected text</p></main>',
+    );
+    manager = createSelectionManager({ window, document });
+    select('#text');
+    document.dispatchEvent(new Event('selectionchange'));
+    vi.advanceTimersByTime(100);
+    const diagnostics = manager.diagnostics();
+    expect(diagnostics).toContain('Last capture: outside-assistant');
+    expect(diagnostics).toContain('main[turn=other]');
+    for (const secret of [
+      'private-id',
+      'private-class',
+      'private-value',
+      'Private selected text',
+      location.href,
+    ])
+      expect(diagnostics).not.toContain(secret);
+    expect(manager.getSelection()).toBeNull();
+  });
   function start(navigation?: EventTarget) {
     const debug = vi.fn();
     manager = createSelectionManager({ window, document, navigation, debug });

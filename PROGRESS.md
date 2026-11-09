@@ -454,3 +454,11 @@ The user's updated popup proves the content script is connected and reports no v
 Verification: 231 tests passed across 19 files (external responses mocked); native Chrome/ChatGPT verification not performed. Version 0.9.2 distinguishes this selection compatibility patch from 0.9.1. No OAuth or network behavior changes.
 
 0.9.2 checks: typecheck (including backend), lint, production extension/backend build and ZIP clean-extraction validation all passed. Packaged artifact: releases/chatgpt-island-v0.9.2.zip. Manual live-browser results remain unverified.
+
+## Live selection diagnosis — 0.9.3
+
+The user confirmed the 0.9.2 selection patch did not resolve the failure, including a selection outside the Writing card. The connected popup returns no-selection. The actual live DOM rejection reason is still unknown. Do not treat the earlier fixture fixes as proof of the browser root cause.
+
+Added explicit same-extension SELECTION_DIAGNOSTICS messaging after a failed manual open. The content manager returns the last validation reason, current validation result, capture availability and at most 16 ancestor tag names per endpoint/focused element. Only allowlisted assistant/user/system author/turn values are reported; all other values become "other". Text, URLs, arbitrary attribute values, IDs and classes are omitted. Nothing is persisted or transmitted externally. The popup displays the diagnostics as plain text and identifies version 0.9.3. Tests verify rejection detail privacy and popup rendering. No selection acceptance rules were broadened in this diagnostic patch. Live browser resolution remains pending the user's diagnostic result.
+
+0.9.3 verification: typecheck, lint, production extension/backend build and ZIP validation passed. Initial suite run overlapped distribution rebuilding and two release tests failed on missing build-info.json; rerunning after the build completed passed all 233 tests in 19 files. No real browser/API tests performed. Diagnostic ZIP: releases/chatgpt-island-v0.9.3.zip.

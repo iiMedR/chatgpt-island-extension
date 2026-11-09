@@ -1,6 +1,8 @@
 export const OPEN_ISLAND_COMMAND = 'open-island';
 export type ExtensionMessage =
-  { type: 'ISLAND_OPEN_REQUEST' } | { type: 'FOUNDATION_PING' };
+  | { type: 'ISLAND_OPEN_REQUEST' }
+  | { type: 'FOUNDATION_PING' }
+  | { type: 'SELECTION_DIAGNOSTICS' };
 export type IslandTriggerStatus =
   | 'triggered'
   | 'no-selection'
@@ -17,7 +19,9 @@ export function isExtensionMessage(value: unknown): value is ExtensionMessage {
     value !== null &&
     Object.keys(value).length === 1 &&
     'type' in value &&
-    (value.type === 'ISLAND_OPEN_REQUEST' || value.type === 'FOUNDATION_PING')
+    (value.type === 'ISLAND_OPEN_REQUEST' ||
+      value.type === 'FOUNDATION_PING' ||
+      value.type === 'SELECTION_DIAGNOSTICS')
   );
 }
 export function isIslandTriggerResult(
