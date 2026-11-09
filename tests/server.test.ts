@@ -410,3 +410,44 @@ it('rejects history over the new character budget or split turns before provider
   }
   expect(create).not.toHaveBeenCalled();
 });
+
+it('bounds concurrent provider calls and releases admission slots after completion', async () => {
+  const pending: (() => void)[] = [];
+  const { app, create } = setup(
+    () =>
+      new Promise((resolve) =>
+        pending.push(() =>
+          resolve({ status: 'completed', output_text: 'answer' }),
+        ),
+      ),
+  );
+  const request = () =>
+    app.inject({ method: 'POST', url: '/api/chat', headers, payload: body });
+  const active = Array.from({ length: 4 }, request);
+  await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(4));
+  const rejected = await request();
+  expect(rejected.statusCode).toBe(429);
+  expect(rejected.json()).toEqual({ error: 'busy' });
+  pending.splice(0).forEach((resolve) => resolve());
+  expect(
+    (await Promise.all(active)).every(
+      (response) => response.statusCode === 200,
+    ),
+  ).toBe(true);
+  const next = request();
+  await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(5));
+  pending.splice(0).forEach((resolve) => resolve());
+  expect((await next).statusCode).toBe(200);
+});
+it('never reflects unknown paths/query strings through default framework error bodies', async () => {
+  const { app, create } = setup();
+  const response = await app.inject({
+    method: 'GET',
+    url: '/PRIVATE-CONTEXT?question=PRIVATE-QUESTION',
+    headers,
+  });
+  expect(response.statusCode).toBe(404);
+  expect(response.json()).toEqual({ error: 'invalid_request' });
+  expect(response.body).not.toContain('PRIVATE');
+  expect(create).not.toHaveBeenCalled();
+});

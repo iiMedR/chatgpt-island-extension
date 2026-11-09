@@ -4,6 +4,7 @@ import config from '../vite.config';
 import { manifest } from '../manifest.config';
 const watch = process.argv.includes('--watch');
 const offline = process.argv.includes('--offline');
+const mockBackend = process.argv.includes('--mock-backend');
 const mode = watch ? 'development' : 'production';
 process.env.NODE_ENV = mode;
 // Clean once: a popup rebuild must not remove the worker/content watcher outputs.
@@ -19,7 +20,13 @@ await build(
           await mkdir('dist', { recursive: true });
           await writeFile(
             'dist/build-info.json',
-            JSON.stringify({ aiMode: offline ? 'mock' : 'openai' }),
+            JSON.stringify({
+              aiMode: offline
+                ? 'mock'
+                : mockBackend
+                  ? 'mock-backend'
+                  : 'openai',
+            }),
           );
           await writeFile(
             'dist/manifest.json',

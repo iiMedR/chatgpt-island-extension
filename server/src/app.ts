@@ -10,6 +10,7 @@ import type { AIErrorCode } from '../../src/shared/ai-contract.js';
 
 export const BODY_LIMIT = 262144;
 export const AI_TIMEOUT_MS = BACKEND_DEADLINE_MS;
+export const MAX_ACTIVE_REQUESTS = 4;
 const statusFor = (code: AIErrorCode) =>
   code === 'timeout'
     ? 504
@@ -17,7 +18,7 @@ const statusFor = (code: AIErrorCode) =>
       ? 400
       : code === 'missing_api_key'
         ? 503
-        : ['rate_limit', 'insufficient_credits'].includes(code)
+        : ['busy', 'rate_limit', 'insufficient_credits'].includes(code)
           ? 429
           : 502;
 export function createApp(
@@ -36,6 +37,10 @@ export function createApp(
     requestIdHeader: false,
   });
   const generate = createOpenAIService(config, options.client);
+  let activeRequests = 0;
+  app.setNotFoundHandler((_request, reply) =>
+    reply.code(404).send({ error: 'invalid_request' }),
+  );
   app.addHook('onRequest', async (request, reply) => {
     if (
       request.headers.origin !== config.extensionOrigin ||
@@ -73,6 +78,9 @@ export function createApp(
   app.post('/api/chat', async (request, reply) => {
     if (!isChatRequest(request.body))
       return reply.code(400).send({ error: 'invalid_request' });
+    if (activeRequests >= MAX_ACTIVE_REQUESTS)
+      return reply.code(429).send({ error: 'busy' });
+    activeRequests++;
     const controller = new AbortController();
     let timedOut = false;
     let cancel!: () => void;
@@ -113,6 +121,7 @@ export function createApp(
       options.diagnostic?.(code, status);
       return reply.code(status).send({ error: code });
     } finally {
+      activeRequests--;
       clearTimeout(timer!);
       request.raw.off('aborted', disconnected);
       reply.raw.off('close', disconnected);

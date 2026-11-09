@@ -21,6 +21,7 @@ export interface ChatRequest {
   messages: WireMessage[];
 }
 export const AI_ERRORS = {
+  busy: 'The local AI backend is busy. Wait for another request to finish, then retry.',
   backend_unavailable:
     "Couldn't connect to the AI service. Check that the local backend is running.",
   timeout: 'The AI request timed out. Please try again.',

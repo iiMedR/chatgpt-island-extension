@@ -69,7 +69,7 @@ function capture(selector = '#answer') {
 }
 function opens() {
   return debug.mock.calls.filter(
-    (call) => call[0] === '[ChatGPT Island] Island-open received',
+    (call: unknown[]) => call[0] === '[ChatGPT Island] Island-open received',
   );
 }
 it('bridges one command to exactly one local event and returns no selected text', async () => {

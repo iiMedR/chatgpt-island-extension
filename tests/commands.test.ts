@@ -142,3 +142,20 @@ it('checks both assigned and unassigned shortcuts without changing preferences',
   getAll.mockRejectedValue(new Error('Unavailable'));
   expect(await checkShortcutAssignment()).toBe('shortcut-check-failed');
 });
+
+it('keeps overlapping commands for separate supplied tabs isolated without fallback queries', async () => {
+  const results = await Promise.all([
+    handleCommand('open-island', tab),
+    handleCommand('open-island', {
+      ...tab,
+      id: 9,
+      url: 'https://chatgpt.com/c/two',
+    }),
+  ]);
+  expect(results).toEqual(['triggered', 'triggered']);
+  expect(query).not.toHaveBeenCalled();
+  expect(sendMessage.mock.calls).toEqual([
+    [7, { type: 'ISLAND_OPEN_REQUEST' }, { frameId: 0 }],
+    [9, { type: 'ISLAND_OPEN_REQUEST' }, { frameId: 0 }],
+  ]);
+});

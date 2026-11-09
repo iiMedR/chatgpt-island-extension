@@ -18,7 +18,8 @@
     "server:dev": "npm --prefix server run dev",
     "server:build": "npm --prefix server run build",
     "build:offline": "tsx scripts/build.ts --offline",
-    "dev:offline": "tsx scripts/build.ts --watch --offline"
+    "dev:offline": "tsx scripts/build.ts --watch --offline",
+    "test:backend-browser": "tsx scripts/build.ts --mock-backend && playwright test -c playwright.backend.config.ts"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -35,6 +36,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.0",
+    "axe-core": "^4.14.0",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
@@ -45,6 +47,9 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",
     "vite": "^7.2.0",
-    "vitest": "^3.2.4"
+    "vitest": "~4.1.11"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
   }
 }

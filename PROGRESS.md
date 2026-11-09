@@ -2,7 +2,7 @@
 
 ## Milestone plan
 
-Prompts 01–08 were supplied. Earlier sections are historical checkpoints. Milestone 08 refines window interaction, focus and responsive behavior on the existing integration; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–09 were supplied. Earlier sections are historical checkpoints. Milestone 09 audits and hardens the existing implementation, dependencies and verification; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
@@ -12,7 +12,7 @@ Prompts 01–08 were supplied. Earlier sections are historical checkpoints. Mile
 6. Real AI provider integration — implemented; Partial pending configured live OpenAI/Chrome verification below.
 7. Follow-up conversations and context optimization — implemented; automated evidence and remaining manual checks below.
 8. Floating window UX and interaction polish — implemented; automated evidence and browser limitations below.
-9. Security, regression, and browser compatibility verification — not started.
+9. Testing, security and reliability — implemented; Partial due browser/live integration and distribution blockers below.
 10. Release packaging and distribution documentation — not started.
 
 ## Milestone 01 checklist
@@ -278,3 +278,72 @@ Fourteen added tests cover frame coalescing (multiple moves produce one render),
 Files modified: useIslandWindow.ts, IslandChat.tsx, island-controller.tsx, island.css; window/island/conversation UI/build tests; browser viewport fixtures; README, ARCHITECTURE and PROGRESS. Pure window helpers, theme detection, selection/commands and backend implementation are reused.
 
 Known limits: DOM and pure-geometry tests cannot establish rendered contrast, actual browser Tab order, native drag smoothness, wheel behavior, zoom correctness or extension loading. Execute README's exact manual scenarios A–F in Chrome, including host themes, reduced motion, short viewports, pending-response focus and original-conversation preservation. At extreme viewport sizes the composer scrolls and not all content fits at once. No fade-out/geometry transition was added; immediate cleanup and unanimated dragging are intentional. Live provider functionality remains unverified with actual credentials; all previous mocked AI regression tests pass. Milestone 09 remains unstarted.
+
+## Milestone 09 — testing, security and reliability
+
+Status: **Partial**. Source/test-backed implementation audit, fixes, CI configuration and documentation are complete. Native browser/load/shortcut/live-ChatGPT compatibility and public distribution authorization remain unverified/unresolved. Milestone 10 has not begun; public Web Store packaging is not ready.
+
+Audit scope: repository inventory/status/recent commits; README/architecture/progress; manifest/default CSP and permissions; background commands/AI relay; content initialization and range/selection manager; React/Shadow DOM/styles/focus/geometry; conversation manager/context pruning/request builder/adapter; Fastify/OpenAI/config/error boundaries; tests, scripts, dependency locks and absence of existing CI. Production source search reviewed every use of HTML insertion, dynamic execution, fetch, URL construction, storage, logging, timers, observers and DOM queries. No original-conversation scan, unsafe HTML/eval/remote script, analytics or persistent chat storage was found in production source. Semantic ChatGPT DOM remains a fixture-backed assumption. No unrelated changes were present initially.
+
+Implemented/fixed:
+
+- Low-severity error sanitization defect: Fastify's default unknown-route body reflected requested URL/query. A fixed 404 payload now replaces it, with regression evidence excluding private marker text.
+- Bounded backend admission: at most four active provider requests per process; overflow returns busy/429 before calling SDK, and finally releases slots. This reduces accidental concurrent load/cost; it is not authentication, a total billing cap or sequential-abuse protection.
+- Dependency remediation: initial root npm audit reported 2 critical and 11 moderate affected packages (development graph), including Tinypool gadget advisories and Vitest/mocker traversal plus minimatch glob amplification. Reviewed Node/Vite compatibility, then moved Vitest 3.2.7 to patched 4.1.12 and added a development minimatch override resolving to 11.0.5. Removed the old Tinypool dependency. Avoided audit-force and unrelated latest-major updates. Tests/types/lint pass after one test mock-call type annotation required by newer Vitest types. Added axe-core 4.14.0 for structural accessibility checks.
+- Standard-test fetch guard rejects external/provider URLs unless a test explicitly supplies a mock, preserving actual local cancellation tests. No paid or live API call was made.
+- Full fixture workflow test composes selection, command routing, React UI, validated backend/SDK mock and follow-up history; checks no unrelated selected-page data, original input/message preservation, one root and 20 close/reopen cycles. Existing ai-flow covers runtime Port/worker transport separately.
+- New built-extension/mock HTTP suite covers follow-up privacy, retry and pending close/new-context isolation. It must exclusively bind port 8787 before browser launch, contains no SDK/key, and fails on collision. Separate build metadata/config guard test modes. Existing six-viewport UI suite remains offline-only.
+- GitHub Actions installs both lockfiles, checks types/lint/format/build/tests/audits, installs Chromium, runs both suites, then restores production. Read-only repository permission, no keys, paid calls, publishing or deployment. Workflow has not been run on GitHub in this session.
+- Added root SECURITY.md and TESTING.md; updated README/ARCHITECTURE and this evidence. Policy resolver confirms the root policy applies. No owner-approved vulnerability exclusions were invented.
+
+### Actual verification, 2026-11-09
+
+| Command/check                       | Actual result                                                                                                                                                                                      |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| npm run typecheck                   | Passed, including backend typecheck                                                                                                                                                                |
+| npm run lint                        | Passed                                                                                                                                                                                             |
+| npm run format:check                | Passed                                                                                                                                                                                             |
+| npm run build                       | Passed, extension and backend; final dist mode openai                                                                                                                                              |
+| npm run test                        | 218 tests passed across 18 files under Vitest 4.1.12                                                                                                                                               |
+| npm audit (root, after remediation) | Exit 0, zero advisories at every severity                                                                                                                                                          |
+| npm audit (server)                  | Exit 0, zero advisories at every severity                                                                                                                                                          |
+| npm outdated (root)                 | Exit 1 listing available newer majors; current packages meet declared wanted ranges                                                                                                                |
+| npm outdated (server)               | Exit 0, no outdated packages reported                                                                                                                                                              |
+| npm run test:browser                | All 6 cases fail before page load at Windows browser spawn UNKNOWN                                                                                                                                 |
+| npm run test:backend-browser        | Local mock setup succeeded; all 3 cases fail before page load at Windows browser spawn UNKNOWN                                                                                                     |
+| axe structural checks               | No violations in enabled jsdom-supported rules; contrast/host-document rules excluded explicitly                                                                                                   |
+| Bundle credentials                  | Built with synthetic server-key canary; artifact tests reject canary/key patterns/provider SDK/endpoint in extension                                                                               |
+| Coverage percentage                 | Not measured; no percentage claimed                                                                                                                                                                |
+| Live Chrome/OpenAI/manual           | Not performed; no credentials or paid calls used                                                                                                                                                   |
+| Formal security scan                | Launcher rejected scope with “Scan scope must reference an existing directory inside the target.” No registered/sealed scan or certification claimed; implementation audit continued independently |
+
+Advisory references: [Tinypool worker-options gadget](https://github.com/advisories/GHSA-5gmw-xhrv-c9v3), [Tinypool run-options gadget](https://github.com/advisories/GHSA-85c8-ppgw-ccpr), [Vitest/mocker traversal](https://github.com/advisories/GHSA-82fw-gwwq-j7x9), [minimatch amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249). The initial critical labels concern the development dependency graph, not a demonstrated shipped extension RCE. Patched graph is clean according to the dated npm audit, not a guarantee against undisclosed vulnerabilities.
+
+Outdated-major assessment: newer jest-dom, Chrome/Node types, React Vite plugin, jsdom, TypeScript, Vite and Vitest majors were available. Node types remain aligned with Node 24; TypeScript stays on the existing supported parser/toolchain combination. No unpatched audited advisory required adopting those unrelated majors. The minimatch override crosses a major in development tooling and needs ongoing review; remove it when upstream ranges include the patched version. No production framework/SDK/model change was needed.
+
+### Acceptance evidence and blockers
+
+- [x] Source implementation audit and confirmed fixes; selection/commands/conversation/window/lifecycle/failure/security regressions pass.
+- [x] Primary workflow has executed DOM/backend mocked coverage; separate transport integration passes.
+- [x] Key-only-server boundary, bounded request privacy, no application persistence and original-page preservation are covered by source/tests.
+- [x] Prompt instructions/reference role separation tested; no promise of complete injection immunity.
+- [x] Backend validation/access limitations reviewed and documented; simultaneous work bounded.
+- [x] Dependency advisories assessed and patched; builds/checks pass.
+- [x] Performance reviewed: the existing coalescing test measures multiple moves yielding one render per frame; cleanup/cycle tests pass. No live CPU/heap benchmark or “no slowdown” claim.
+- [x] Accessibility source/control/focus review and axe structural check; no full-compliance claim.
+- [x] CI configured, security/testing documentation created.
+- [ ] Actual unpacked Chrome loading, native OS shortcut, worker restart/focus behavior and real ChatGPT DOM verified in a running browser.
+- [ ] Real browser responsive/scroll/zoom/contrast/assistive technology verification.
+- [ ] GitHub Actions executed successfully on hosted runner.
+- [ ] Public backend authorization/provisioning, explicit distribution privacy/cost requirements and private maintainer reporting contact resolved.
+
+| Severity | Finding/readiness assessment                                                                                                                                                                                                                                                                                                                             |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Critical | Initial critical dev-tool advisories remediated. No confirmed unresolved critical source defect identified in reviewed paths; this is not proof of absence.                                                                                                                                                                                              |
+| High     | Public distribution blocker: local processes can forge Origin/Host and spend the backend API quota. Current trusted-machine prototype has no client authentication. Public hosting/distribution requires a separately specified authorization/provisioning design; do not distribute shared secrets. Four-request admission does not fix authentication. |
+| Medium   | Windows browser launch failure prevents all 9 rendered cases; live DOM/native shortcut/worker/browser behavior and remote CI remain unverified. Provider costs are disclosed but no in-app hard spending cap exists. Public distribution needs an explicit privacy/authorization/cost assessment.                                                        |
+| Low      | Manual contrast/screen-reader/zoom/wheel checks and configured private reporting contact are pending. Keep the development override reviewed; no visual defect is asserted without rendered evidence.                                                                                                                                                    |
+
+Release decision: **not Chrome Web Store/public-backend ready**. Local development can continue under documented trusted-machine assumptions. Before Milestone 10 packaging, obtain running-browser evidence (including the mock backend transport cases), decide how users securely provision/authenticate a local backend, review cost/privacy disclosures and provider handling, configure maintainer reporting, and run hosted CI. No additional API calls, public infrastructure, accounts, payments or packaging were implemented.
+
+Final regression additions explicitly test overlapping command calls targeting two different supplied ChatGPT tab IDs without fallback queries, plus all three instruction-like reference examples (ignore instructions / reveal prompt / send conversation elsewhere) remaining separate user-reference data. A targeted sandbox run stopped before collection because Vitest's temporary-cache rename returned EPERM; the final full suite outside that sandbox passed all 218 tests. This environmental failure is not reported as a test pass.

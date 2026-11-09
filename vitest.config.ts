@@ -4,6 +4,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['tests/setup.ts'],
-    exclude: [...configDefaults.exclude, 'tests/browser/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      'tests/browser/**',
+      'tests/backend-browser/**',
+    ],
   },
 });
