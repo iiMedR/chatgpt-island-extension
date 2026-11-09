@@ -2,7 +2,7 @@
 
 ## Milestone plan
 
-Prompts 01–07 were supplied. Earlier sections are historical checkpoints. Milestone 07 implements deterministic whole-turn context retention on the existing backend integration; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
+Prompts 01–08 were supplied. Earlier sections are historical checkpoints. Milestone 08 refines window interaction, focus and responsive behavior on the existing integration; live OpenAI and Chrome verification remain pending. Later milestones remain a proposed roadmap, not requirements from unseen prompts.
 
 1. Project setup and foundation — implemented and automated checks passed; manual Chrome verification pending.
 2. Selection detection and validated context capture — implemented; automated verification passed. Real ChatGPT compatibility remains manually unverified.
@@ -11,7 +11,7 @@ Prompts 01–07 were supplied. Earlier sections are historical checkpoints. Mile
 5. Message composer and context management — implemented; verification recorded below.
 6. Real AI provider integration — implemented; Partial pending configured live OpenAI/Chrome verification below.
 7. Follow-up conversations and context optimization — implemented; automated evidence and remaining manual checks below.
-8. Theme, accessibility, and interaction refinement — not started.
+8. Floating window UX and interaction polish — implemented; automated evidence and browser limitations below.
 9. Security, regression, and browser compatibility verification — not started.
 10. Release packaging and distribution documentation — not started.
 
@@ -251,3 +251,30 @@ Fourteen additional tests cover first/multiple follow-ups; exact 20-message and 
 Files: added conversation/context-manager.ts and tests/context-manager.test.ts; updated conversation types/manager/request-builder/OpenAI adapter, shared schema/limits, adapter/backend tests and README/ARCHITECTURE/PROGRESS. No manifest, model, provider or dependency change was required.
 
 Known limits: older visible discussion can fall out of model context; counts approximate token usage. The application preserves roles and trusted instructions but cannot guarantee model immunity to arbitrary prompt injection. The local backend remains unauthenticated trusted development infrastructure, not public hosting. store:false does not promise zero provider retention; cancellation cannot undo already processed/billed provider work. Standard tests use mocks rather than validating live model answers. README contains exact manual scenarios A–E for normal/long follow-ups, replacement, failure/retry and close cancellation, each checking original-page preservation. Later milestones remain unstarted.
+
+## Milestone 08 — floating window UX and interaction polish
+
+Status: **Partial** — code, unit/DOM tests and production builds pass; rendered/native Chrome verification is blocked by the environment. Milestone 09 has not begun.
+
+Changes: frame-batched pointer geometry, stable hook callbacks, single-pointer ownership, final movement flush, frame/listener/capture cleanup, and no animation during gestures. Existing viewport/default/minimum/expand/restore helpers remain in use, with responsive regression coverage. Closing still resets geometry; open-session geometry survives chat updates and selection replacement. Focus restoration now follows nested shadow focus and avoids detached controls; successful responses refocus only when the composer still owns focus. Added a 120 ms opacity-only opening animation with reduced-motion override, internal short-viewport composer scrolling, nonshrinking header controls, wrapped hints and context-to-conversation scroll chaining. Closing remains immediate to cancel requests and clear sensitive data without an exit timer.
+
+Existing Enter/Shift+Enter, IME Escape exemption, non-modal Tab behavior, visible focus, keyboard move/resize, theme token/attribute/system fallback, near-bottom scrolling, cancellation, context limits and retries are preserved. No backend contracts, provider settings, permissions, dependencies or extra AI requests changed. No persistent geometry/history storage was introduced.
+
+Actual verification on 2026-11-09:
+
+| Command/check                      | Actual result                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| npm run typecheck                  | Passed, including backend equivalent                                                                   |
+| npm run lint                       | Passed with no remaining hook warning                                                                  |
+| npm run test                       | 210 tests passed across 15 files; provider calls mocked                                                |
+| npm run build                      | Passed, extension and backend compile; production mode restored after browser attempts                 |
+| npm run format:check               | Passed                                                                                                 |
+| npm run test:browser               | Expanded to six viewport cases; all stopped before page load: sandbox Chromium executable missing      |
+| Host-cache browser attempt         | Same offline suite retried outside sandbox; all six failed at browser spawn with Windows spawn UNKNOWN |
+| Manual Chrome/live API/rendered QA | Not performed; no screenshot/visual pass is claimed                                                    |
+
+Fourteen added tests cover frame coalescing (multiple moves produce one render), foreign pointer cancellation, final flush, queued-frame/unmount cleanup, viewport listener removal, clamped restore, six initial/move/resize viewport widths (1920/1440/1024/768/480/280), composing Escape and reachable controls, nested-shadow/detached focus restoration, delayed-answer focus ownership, long plain text/geometry stability, and reduced-motion/wrapping/scroll CSS plus compiled asset presence. Existing tests continue checking selection/shortcut isolation, same/new selections, one root, themes, safe rendering, scroll position, pending cancellation and original-page preservation. Browser fixtures now cover 1920/1440/1024/768/480/360 widths when Chromium can run. Browser plugin was not available, so the frontend testing skill used the existing Playwright test path. All browser runs explicitly built offline to avoid paid calls; final dist is rebuilt in production mode.
+
+Files modified: useIslandWindow.ts, IslandChat.tsx, island-controller.tsx, island.css; window/island/conversation UI/build tests; browser viewport fixtures; README, ARCHITECTURE and PROGRESS. Pure window helpers, theme detection, selection/commands and backend implementation are reused.
+
+Known limits: DOM and pure-geometry tests cannot establish rendered contrast, actual browser Tab order, native drag smoothness, wheel behavior, zoom correctness or extension loading. Execute README's exact manual scenarios A–F in Chrome, including host themes, reduced motion, short viewports, pending-response focus and original-conversation preservation. At extreme viewport sizes the composer scrolls and not all content fits at once. No fade-out/geometry transition was added; immediate cleanup and unanimated dragging are intentional. Live provider functionality remains unverified with actual credentials; all previous mocked AI regression tests pass. Milestone 09 remains unstarted.

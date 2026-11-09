@@ -18,7 +18,11 @@ body{margin:0;background:#fafafa;color:#222;font:15px/1.7 system-ui}main{max-wid
 </style></head><body><main id="original"><h1>Local conversation fixture</h1><div data-message-author-role="user"><p>What does RAG do?</p></div><div data-message-author-role="assistant"><p data-testid="excerpt">In short, RAG grounds the model’s responses in real, relevant information.</p><p data-testid="other">Retrieval supplies context before an answer is generated.</p></div><textarea aria-label="Original composer" placeholder="Original conversation input"></textarea></main></body></html>`;
 
 for (const size of [
-  { width: 1280, height: 800 },
+  { width: 1920, height: 1080 },
+  { width: 1440, height: 900 },
+  { width: 1024, height: 768 },
+  { width: 768, height: 700 },
+  { width: 480, height: 640 },
   { width: 360, height: 640 },
 ]) {
   test(`built extension floating UI at ${size.width}×${size.height}`, async () => {

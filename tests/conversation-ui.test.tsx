@@ -225,3 +225,29 @@ it('labels real-adapter responses as Assistant and shows the transmission notice
     ui.getByText('Selected context and island messages are sent to OpenAI.'),
   ).toBeInTheDocument();
 });
+
+it('does not steal focus from the page or header when a delayed answer arrives', async () => {
+  const outside = document.createElement('button');
+  document.body.append(outside);
+  const pending = pendingResponse();
+  const { ui } = setup({ kind: 'ai', generateResponse: () => pending.promise });
+  fireEvent.change(ui.getByRole('textbox'), { target: { value: 'Question' } });
+  fireEvent.keyDown(ui.getByRole('textbox'), { key: 'Enter' });
+  outside.focus();
+  await act(async () => pending.resolve('A real-answer fixture'));
+  expect(document.activeElement).toBe(outside);
+  expect(ui.getByText('A real-answer fixture')).toBeInTheDocument();
+});
+it('retains moved geometry and long plain-text content across question and answer updates', async () => {
+  const { ui } = setup();
+  const header = ui.getByLabelText('Move ChatGPT Island with arrow keys');
+  fireEvent.keyDown(header, { key: 'ArrowLeft' });
+  const dialog = ui.getByRole('dialog');
+  const geometry = dialog.getAttribute('style');
+  const long = 'LongCodeWord'.repeat(500);
+  await send(ui, long);
+  expect(ui.getByText(long)).toBeInTheDocument();
+  expect(dialog.getAttribute('style')).toBe(geometry);
+  act(() => controller!.open(payload));
+  expect(dialog.getAttribute('style')).toBe(geometry);
+});

@@ -49,3 +49,15 @@ it('does not bundle backend SDK, provider endpoint or server credential values',
     expect(text).not.toMatch(/sk-(?:proj-)?[A-Za-z0-9_-]{32,}/);
   }
 });
+
+it('ships reduced-motion opening feedback and isolated wrapping/scroll rules', () => {
+  const css = readFileSync('src/content/island/island.css', 'utf8');
+  expect(css).toMatch(/prefers-reduced-motion:\s*reduce/);
+  expect(css).toMatch(/animation:\s*none/);
+  expect(css).toContain('overflow-wrap: anywhere');
+  expect(css).toContain('overscroll-behavior: contain');
+  expect(css).not.toMatch(/transition:\s*all/);
+  expect(readFileSync('dist/content.js', 'utf8')).toContain(
+    'prefers-reduced-motion',
+  );
+});

@@ -8,6 +8,8 @@
   box-sizing: border-box;
 }
 .island {
+  animation: island-open 120ms ease-out;
+  min-width: 0;
   position: absolute;
   pointer-events: auto;
   display: flex;
@@ -75,6 +77,7 @@ h2 {
   color: var(--muted);
 }
 .header-actions {
+  flex-shrink: 0;
   display: flex;
   gap: 4px;
 }
@@ -122,7 +125,7 @@ blockquote {
 .context blockquote {
   max-height: 144px;
   overflow: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
   scrollbar-width: thin;
 }
 .assistant {
@@ -137,7 +140,10 @@ blockquote {
   padding: 2px 4px;
 }
 .composer-area {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px 16px 10px;
 }
 .composer {
@@ -182,10 +188,24 @@ textarea:focus-visible {
   color: var(--background);
 }
 .composer-hint {
+  overflow-wrap: anywhere;
   font-size: 10px;
   text-align: center;
   color: var(--muted);
   margin-top: 7px;
+}
+@keyframes island-open {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .island {
+    animation: none;
+  }
 }
 .request-error {
   font-size: 12px;

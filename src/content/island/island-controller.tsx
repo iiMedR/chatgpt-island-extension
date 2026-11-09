@@ -43,6 +43,8 @@ export function createIslandController(
           document.activeElement instanceof HTMLElement
             ? document.activeElement
             : null;
+        while (previousFocus?.shadowRoot?.activeElement instanceof HTMLElement)
+          previousFocus = previousFocus.shadowRoot.activeElement;
         host = document.createElement('div');
         host.setAttribute('data-chatgpt-island-root', '');
         host.style.cssText =

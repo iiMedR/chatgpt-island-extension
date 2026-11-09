@@ -204,3 +204,50 @@ it('adapts default/expanded/minimum geometry to small and offset visual viewport
     }
   }
 });
+
+it.each([1920, 1440, 1024, 768, 480, 280])(
+  'keeps initial, moved and resized geometry visible at width %i',
+  (width) => {
+    const view = { x: 0, y: 0, width, height: 600 };
+    const initial = initialWindow(view);
+    for (const rect of [
+      initial,
+      expandedWindow(view),
+      fitWindow({ ...initial, x: -999, y: 9999 }, view),
+      resizeWindow(initial, 9999, 9999, view),
+    ]) {
+      expect(rect.x).toBeGreaterThanOrEqual(0);
+      expect(rect.y).toBeGreaterThanOrEqual(0);
+      expect(rect.x + rect.width).toBeLessThanOrEqual(width);
+      expect(rect.y + rect.height).toBeLessThanOrEqual(600);
+    }
+  },
+);
+it('preserves IME Escape, scopes Escape to the island, and keeps all controls keyboard reachable', () => {
+  const { ui } = open();
+  const input = ui.getByRole('textbox');
+  fireEvent.keyDown(input, { key: 'Escape', isComposing: true });
+  expect(ui.getByRole('dialog')).toBeInTheDocument();
+  expect(
+    ui.getByLabelText('Move ChatGPT Island with arrow keys'),
+  ).toHaveAttribute('tabindex', '0');
+  for (const control of ui.getAllByRole('button'))
+    expect(control.tabIndex).toBe(0);
+  fireEvent.keyDown(input, { key: 'Escape' });
+  expect(document.querySelector('[data-chatgpt-island-root]')).toBeNull();
+});
+it('restores deeply focused shadow controls and gracefully ignores detached prior focus', () => {
+  const owner = document.createElement('div');
+  const nested = owner.attachShadow({ mode: 'open' });
+  const input = document.createElement('input');
+  nested.append(input);
+  document.body.append(owner);
+  input.focus();
+  let opened = open();
+  fireEvent.click(opened.ui.getByRole('button', { name: 'Close island' }));
+  expect(nested.activeElement).toBe(input);
+  opened = open();
+  owner.remove();
+  fireEvent.click(opened.ui.getByRole('button', { name: 'Close island' }));
+  expect(document.querySelector('[data-chatgpt-island-root]')).toBeNull();
+});

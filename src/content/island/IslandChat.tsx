@@ -36,7 +36,21 @@ export function IslandChat({
   async function submit() {
     if (submitting || !validation.valid) return;
     const result = await manager.submit();
-    if (result === 'success') composer.current?.focus({ preventScroll: true });
+    const field = composer.current;
+    if (result === 'success' && field?.isConnected) {
+      const root = field.getRootNode();
+      const active =
+        root instanceof ShadowRoot
+          ? root.activeElement
+          : field.ownerDocument.activeElement;
+      // Refocus after send only if the user has stayed in the composer.
+      if (
+        field.closest('form')?.contains(active) &&
+        (!(root instanceof ShadowRoot) ||
+          field.ownerDocument.activeElement === root.host)
+      )
+        field.focus({ preventScroll: true });
+    }
   }
   return (
     <>

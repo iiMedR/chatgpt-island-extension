@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import type { IslandWindowState, WindowRect } from './island-types';
 import {
@@ -23,12 +23,27 @@ export function useIslandWindow() {
     rect: WindowRect;
     target: HTMLElement;
   } | null>(null);
-  function finish() {
-    const current = gesture.current;
-    gesture.current = null;
-    if (current?.target.hasPointerCapture?.(current.id))
-      current.target.releasePointerCapture(current.id);
-  }
+  const frame = useRef<number | null>(null);
+  const pending = useRef<WindowRect | null>(null);
+  const flush = useCallback(() => {
+    frame.current = null;
+    const rect = pending.current;
+    pending.current = null;
+    if (rect) setState((previous) => ({ ...previous, rect }));
+  }, []);
+  const finish = useCallback(
+    (commit = true) => {
+      if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+      frame.current = null;
+      if (commit) flush();
+      else pending.current = null;
+      const current = gesture.current;
+      gesture.current = null;
+      if (current?.target.hasPointerCapture?.(current.id))
+        current.target.releasePointerCapture(current.id);
+    },
+    [flush],
+  );
   useEffect(() => {
     const resized = () => {
       finish();
@@ -43,20 +58,26 @@ export function useIslandWindow() {
     window.visualViewport?.addEventListener('resize', resized);
     window.visualViewport?.addEventListener('scroll', resized);
     return () => {
-      finish();
+      finish(false);
       window.removeEventListener('resize', resized);
       window.visualViewport?.removeEventListener('resize', resized);
       window.visualViewport?.removeEventListener('scroll', resized);
     };
-  }, []);
+  }, [finish]);
   const start = (event: PointerEvent<HTMLElement>, kind: 'drag' | 'resize') => {
     if (
       event.button !== 0 ||
+      event.isPrimary === false ||
+      gesture.current !== null ||
       state.expanded ||
       (kind === 'drag' && (event.target as Element).closest('button'))
     )
       return;
     event.preventDefault();
+    // Opening feedback must never trail an active drag/resize gesture.
+    event.currentTarget
+      .closest<HTMLElement>('.island')
+      ?.style.setProperty('animation', 'none');
     gesture.current = {
       kind,
       id: event.pointerId,
@@ -79,7 +100,9 @@ export function useIslandWindow() {
             viewportFor(window),
           )
         : resizeWindow(current.rect, dx, dy, viewportFor(window));
-    setState((previous) => ({ ...previous, rect }));
+    pending.current = rect;
+    if (frame.current === null)
+      frame.current = window.requestAnimationFrame(flush);
   };
   const keyboard =
     (kind: 'drag' | 'resize') => (event: KeyboardEvent<HTMLElement>) => {
@@ -114,9 +137,15 @@ export function useIslandWindow() {
     };
   const pointer = {
     onPointerMove: move,
-    onPointerUp: finish,
-    onPointerCancel: finish,
-    onLostPointerCapture: finish,
+    onPointerUp: (event?: PointerEvent<HTMLElement>) => {
+      if (!event || gesture.current?.id === event.pointerId) finish();
+    },
+    onPointerCancel: (event?: PointerEvent<HTMLElement>) => {
+      if (!event || gesture.current?.id === event.pointerId) finish();
+    },
+    onLostPointerCapture: (event?: PointerEvent<HTMLElement>) => {
+      if (!event || gesture.current?.id === event.pointerId) finish();
+    },
   };
   return {
     ...state,
