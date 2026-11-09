@@ -111,6 +111,12 @@ export function createSelectionManager({
   return {
     getSelection(): CapturedSelection | null {
       if (disposed || checkNavigation()) return null;
+      // A shortcut may arrive before the scheduled selection debounce finishes.
+      // Flush only already-scheduled validation, using the same range/privacy rules.
+      if (pending !== undefined) {
+        window.clearTimeout(pending);
+        process();
+      }
       return captured;
     },
     clear,

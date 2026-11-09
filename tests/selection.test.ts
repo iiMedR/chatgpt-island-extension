@@ -177,6 +177,15 @@ describe('selection lifecycle', () => {
     trigger();
     expect(manager!.getSelection()).toBe(previous);
   });
+  it('flushes pending selection validation when triggered before the debounce completes', () => {
+    start();
+    select('#bold');
+    document.dispatchEvent(new Event('selectionchange'));
+    expect(manager!.getSelection()?.text).toBe('world');
+    select('#last');
+    document.dispatchEvent(new Event('selectionchange'));
+    expect(manager!.getSelection()?.text).toBe('Second line');
+  });
   it('coalesces rapid events and never logs selected text', () => {
     const debug = start();
     select('#bold');

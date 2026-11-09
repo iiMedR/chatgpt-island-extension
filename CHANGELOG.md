@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1 — Developer Preview, prepared 2026-11-09
+
+- Verify the content script before reporting page connectivity in the popup; show actual command assignment and a manual Open island control with safe failure feedback.
+- Flush already-scheduled selection validation when a shortcut arrives before its debounce finishes.
+- Clarify that OAuth sign-in remains unimplemented and that opening the island does not require the AI backend.
+
 ## 0.9.0 — Developer Preview, prepared 2026-11-09
 
 First prepared preview package; not a public release. No Git release/tag or store upload was created.
