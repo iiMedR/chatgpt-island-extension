@@ -2,6 +2,37 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ChatGPTAccount } from '../src/popup/ChatGPTAccount';
 afterEach(() => vi.unstubAllGlobals());
+it.each([false, true])(
+  'starts a fresh registration while a sign-in is pending (retry URL: %s)',
+  async (needsAuthorization) => {
+    const create = vi.fn().mockResolvedValue({});
+    vi.stubGlobal('chrome', { tabs: { create } });
+    const fetch = vi.fn(async (input: string) =>
+      Response.json(
+        input.endsWith('/auth/start')
+          ? {
+              url: 'https://auth.openai.com/api/accounts/authorize?client_id=dynamic_agent_client',
+            }
+          : { status: 'connecting', sharing: false, needsAuthorization },
+      ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    render(<ChatGPTAccount />);
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'Use another account or workspace',
+      }),
+    );
+    await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
+    expect(fetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:8787/auth/start',
+      expect.objectContaining({ body: JSON.stringify({ newProfile: true }) }),
+    );
+    expect(fetch.mock.calls.some(([url]) => url.endsWith('/auth/resume'))).toBe(
+      false,
+    );
+  },
+);
 it('opens only the official authorization URL from a deliberate sign-in click', async () => {
   const create = vi.fn().mockResolvedValue({});
   vi.stubGlobal('chrome', { tabs: { create } });

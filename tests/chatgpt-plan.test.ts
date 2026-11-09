@@ -72,6 +72,10 @@ describe('ChatGPT plan provider', () => {
     expect(JSON.stringify(status)).not.toContain('state=');
     expect(service.resume()).toContain('state=retry');
     expect((await service.status()).needsAuthorization).toBe(false);
+    expect(await service.start(true)).toContain('state=first');
+    expect(client.cancelSignIn).toHaveBeenCalledOnce();
+    expect(client.signIn).toHaveBeenLastCalledWith({ newProfile: true });
+    expect(() => service.resume()).toThrow();
     await service.disconnect();
     expect(() => service.resume()).toThrow();
   });

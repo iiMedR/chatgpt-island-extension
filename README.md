@@ -1,4 +1,4 @@
-# ChatGPT Island — 0.10.0 Local Preview
+# ChatGPT Island — 0.10.1 Local Preview
 
 Use your authorized ChatGPT plan for an isolated conversation about selected assistant text. This personal Windows project uses official Sign in with ChatGPT through a local Node helper; no API key is required and there is no automatic API-billing fallback. Independent extension; not affiliated with OpenAI. Eligible plan/workspace permissions and usage limits apply.
 

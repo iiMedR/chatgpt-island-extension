@@ -88,7 +88,9 @@ export function ChatGPTAccount() {
     setError('');
     try {
       const { url } = await local<{ url: string }>(
-        session?.needsAuthorization ? '/auth/resume' : '/auth/start',
+        !newProfile && session?.needsAuthorization
+          ? '/auth/resume'
+          : '/auth/start',
         newProfile ? { newProfile: true } : {},
       );
       const parsed = new URL(url);
@@ -168,7 +170,7 @@ export function ChatGPTAccount() {
             : 'Continue with ChatGPT'}
         </button>
       )}
-      {!session?.sharing && session?.status === 'disconnected' ? (
+      {!session?.sharing && session ? (
         <button
           type="button"
           disabled={busy}
@@ -176,6 +178,13 @@ export function ChatGPTAccount() {
         >
           Use another account or workspace
         </button>
+      ) : null}
+      {!session?.sharing && session ? (
+        <p className="text-xs">
+          For a different account, use this button to create a separate
+          connection. Choosing another account inside an existing sign-in keeps
+          its workspace restriction.
+        </p>
       ) : null}
       {session && session.status !== 'disconnected' ? (
         <button

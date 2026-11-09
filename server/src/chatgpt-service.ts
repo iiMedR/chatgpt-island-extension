@@ -42,6 +42,7 @@ export function createPlanService(
   build = createChatGPT,
 ) {
   let pending: Promise<unknown> | undefined;
+  const hasPendingSignIn = () => pending !== undefined;
   let openAttempt: ((url: string) => void) | undefined;
   let selectedModel = '';
   let models: ChatGPTModel[] = [];
@@ -79,7 +80,12 @@ export function createPlanService(
       };
     },
     async start(newProfile = false) {
-      if (pending) throw new AIServiceError('busy');
+      if (hasPendingSignIn()) {
+        if (!newProfile) throw new AIServiceError('busy');
+        client.cancelSignIn();
+        await pending;
+        if (hasPendingSignIn()) throw new AIServiceError('busy');
+      }
       authError = false;
       retryUrl = undefined;
       models = [];

@@ -149,7 +149,7 @@ export default function App() {
     <main className="w-80 space-y-5 p-5">
       <header className="space-y-2">
         <h1 className="text-lg font-semibold tracking-tight">
-          ChatGPT Island <small>0.10.0</small>
+          ChatGPT Island <small>0.10.1</small>
         </h1>
         <p className="text-sm text-muted">
           Explore selected text without leaving your conversation.

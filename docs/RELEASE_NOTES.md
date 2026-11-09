@@ -1,4 +1,4 @@
-# ChatGPT Island 0.10.0 — Personal Local Preview
+# ChatGPT Island 0.10.1 — Personal Local Preview
 
 Adds Continue with ChatGPT, plan authorization, account-specific model discovery/selection, Windows DPAPI credentials and disconnect through the local Node helper. The normal helper uses only ChatGPT-plan OAuth; API-key billing is not a fallback. Existing selected-text isolation, bounded follow-ups, per-conversation consent and cancellation remain.
 
