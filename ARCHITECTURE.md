@@ -130,3 +130,7 @@ Selection compatibility (0.9.2): nested assistant response blocks share their en
 ### Alternate ChatGPT turn markup
 
 Where author attributes are absent, selection validation can recognize a message/turn container by data-testid conversation-turn or data-message-id together with an exact assistant copy-turn-action-button belonging to that container. An explicit user role overrides this fallback. It does not use prose classes, localized labels or generic Copy buttons. Only explicitly selected text is captured; action queries inspect structure within the containing turn. Unknown layouts remain rejected rather than treating arbitrary text as assistant output.
+
+### Observed ChatGPT selection markup (0.9.5)
+
+Live Chrome inspection confirmed data-markdown-text-style="assistant-message" blocks nested inside data-chatgpt-selection-message-id boundaries. Validation supports those markers without relying on layout classes or page-wide scans. An explicit user author or user-message style is rejected. Multiple assistant blocks in one message share a boundary; separate message containers remain separate. Unrelated composer contenteditable focus does not invalidate an explicit assistant document range; native input controls retain their separate-selection focus guard. Editable range endpoints and intervening editable fields remain rejected.

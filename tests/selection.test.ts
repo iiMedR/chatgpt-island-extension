@@ -85,6 +85,37 @@ describe('text and DOM validation', () => {
       text: 'Answer',
     });
   });
+  it('accepts the live ChatGPT selection-message and assistant Markdown markers', () => {
+    fixture(
+      '<div data-chatgpt-selection-message-id="opaque"><div data-markdown-text-style="assistant-message"><h2><span id="a">Heading</span></h2><p><span id="b">Explanation</span></p></div></div>',
+    );
+    const selection = select('#a', '#b');
+    expect(readAssistantSelection(selection, document)).toEqual({
+      valid: true,
+      text: selection.toString().trim(),
+    });
+  });
+  it('accepts multiple assistant blocks within one selection-message boundary', () => {
+    fixture(
+      '<div data-chatgpt-selection-message-id="opaque"><div data-markdown-text-style="assistant-message"><p id="a">Card</p></div><div data-markdown-text-style="assistant-message"><p id="b">Explanation</p></div></div>',
+    );
+    expect(readAssistantSelection(select('#a', '#b'), document).valid).toBe(
+      true,
+    );
+  });
+  it.each([
+    '<div data-chatgpt-selection-message-id="u"><div data-markdown-text-style="user-message"><p id="a">User</p><p id="b">Question</p></div></div>',
+    '<div data-chatgpt-selection-message-id="a"><div data-markdown-text-style="assistant-message"><p id="a">First</p></div></div><div data-chatgpt-selection-message-id="b"><div data-markdown-text-style="assistant-message"><p id="b">Second</p></div></div>',
+    '<div data-chatgpt-selection-message-id="a"><div data-markdown-text-style="assistant-message"><p id="a">First</p><textarea>Private</textarea><p id="b">Second</p></div></div>',
+  ])(
+    'rejects user, separate messages and editable fields in live markup',
+    (html) => {
+      fixture(html);
+      expect(readAssistantSelection(select('#a', '#b'), document).valid).toBe(
+        false,
+      );
+    },
+  );
   it.each([
     'data-testid="conversation-turn-8"',
     'data-message-id="private-message-id"',
@@ -183,6 +214,23 @@ describe('text and DOM validation', () => {
     document.body.append(input);
     input.focus();
     expect(readAssistantSelection(select('#bold'), document).valid).toBe(false);
+  });
+  it('accepts an explicit assistant range when unrelated contenteditable focus remains', () => {
+    const composer = document.createElement('div');
+    composer.contentEditable = 'true';
+    composer.setAttribute('contenteditable', 'true');
+    composer.tabIndex = 0;
+    document.body.append(composer);
+    composer.focus();
+    expect(readAssistantSelection(select('#bold'), document)).toEqual({
+      valid: true,
+      text: 'world',
+    });
+    composer.id = 'composer';
+    composer.textContent = 'Private draft';
+    expect(readAssistantSelection(select('#composer'), document).valid).toBe(
+      false,
+    );
   });
   it('rejects collapsed or missing selection', () => {
     window.getSelection()?.removeAllRanges();

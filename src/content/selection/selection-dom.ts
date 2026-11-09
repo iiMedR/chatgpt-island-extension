@@ -2,7 +2,9 @@ import type { SelectionResult } from './selection-types';
 import { validateSelectionText } from './selection-validator';
 
 const TURN = '[data-testid^="conversation-turn-"], [data-message-id]';
-const MESSAGE = `[data-message-author-role], [data-turn], ${TURN}`;
+const LIVE_MESSAGE = '[data-chatgpt-selection-message-id]';
+const MARKDOWN = '[data-markdown-text-style]';
+const MESSAGE = `[data-message-author-role], [data-turn], ${TURN}, ${LIVE_MESSAGE}, ${MARKDOWN}`;
 const ASSISTANT_ACTION = 'button[data-testid="copy-turn-action-button"]';
 const EXCLUDED =
   'input, textarea, select, button, form, nav, aside, [role="navigation"], [role="search"], [role="complementary"], [role="textbox"], [contenteditable]:not([contenteditable="false"]), [data-chatgpt-island-root]';
@@ -40,6 +42,20 @@ function isAssistant(message: Element): boolean {
     message.getAttribute('data-message-author-role') ??
     message.getAttribute('data-turn');
   if (role !== null) return role === 'assistant';
+  const style = message.getAttribute('data-markdown-text-style');
+  if (style !== null) return style === 'assistant-message';
+  if (message.matches(LIVE_MESSAGE)) {
+    return (
+      !message.querySelector(
+        '[data-markdown-text-style="user-message"], [data-message-author-role="user"], [data-turn="user"]',
+      ) &&
+      Array.from(
+        message.querySelectorAll(
+          '[data-markdown-text-style="assistant-message"]',
+        ),
+      ).some((block) => block.closest(LIVE_MESSAGE) === message)
+    );
+  }
   // Some ChatGPT layouts omit author-role attributes. Require a bounded
   // message/turn container AND its assistant-only action, never generic prose,
   // Markdown classes, localized labels or the presence of any Copy button.
@@ -63,7 +79,10 @@ export function readAssistantSelection(
     return { valid: false, reason: 'empty' };
   if (selection.rangeCount !== 1)
     return { valid: false, reason: 'multiple-ranges' };
-  if (document.activeElement?.closest(EXCLUDED))
+  // Native form controls maintain a separate selection from window.getSelection.
+  // Contenteditable focus can remain on ChatGPT's composer while an explicit
+  // document range selects an assistant response; validate that range below.
+  if (document.activeElement?.closest('input, textarea, select'))
     return { valid: false, reason: 'excluded-region' };
   const range = selection.getRangeAt(0);
   const start = elementFor(range.startContainer);
